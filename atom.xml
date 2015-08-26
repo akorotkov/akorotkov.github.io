@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Alexander Korotkov's blog]]></title>
+  <link href="http://akorotkov.github.io/atom.xml" rel="self"/>
+  <link href="http://akorotkov.github.io/"/>
+  <updated>2015-08-26T17:56:28+03:00</updated>
+  <id>http://akorotkov.github.io/</id>
+  <author>
+    <name><![CDATA[Alexander Korotkov]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Psql Command to Attach Gdb to Backend]]></title>
+    <link href="http://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach/"/>
+    <updated>2015-08-26T18:00:00+03:00</updated>
+    <id>http://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach</id>
+    <content type="html"><![CDATA[<p>While hacking PostgreSQL it&rsquo;s very useful to know pid of the backend you are
+working with. You need to know pid of the process to attach debugger, profiler
+etc. Luckily, .psqlrc provides us an elegant way to define the shortcuts for
+psql. Using config line below one can find out backend pid just by typing <code>:pid</code>.</p>
+
+<figure class='code'><figcaption><span>.psqlrc</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="err">\</span><span class="k">set</span> <span class="n">pid</span> <span class="s1">&#39;SELECT pg_backend_pid();&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="o">=#</span> <span class="p">:</span><span class="n">pid</span>
+</span><span class='line'> <span class="n">pg_backend_pid</span>
+</span><span class='line'><span class="c1">----------------</span>
+</span><span class='line'>          <span class="mi">99038</span>
+</span><span class='line'><span class="p">(</span><span class="mi">1</span> <span class="k">row</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In 9.6 it becomes possible to even <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=275f05c990c46f8dfe3cb46a3279521bda9e9e27">include backend pid into psql prompt</a>.</p>
+
+<p>However, it&rsquo;s possible to automate more complex actions in psql. I&rsquo;ve configured
+my psql to run gdb attached to current backend in new tab of iTerm2 just by
+typing <code>:gdb</code>.</p>
+
+<p><img class="no-border" src="http://akorotkov.github.io/images/screen-psql-iterm-gdb.png"></p>
+
+<!--more-->
+
+
+<p>The <code>:gdb</code> command selects pid of current backend and puts it to the input of
+pg_debug script.</p>
+
+<figure class='code'><figcaption><span>.psqlrc</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="err">\</span><span class="k">set</span> <span class="n">gdb</span> <span class="s1">&#39;SELECT pg_backend_pid() \\g |pg_debug&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>pg_debug extracts pid from its input and then runs OSA script which runs gdb
+in the new tab of iTerm2.</p>
+
+<figure class='code'><figcaption><span>pg_debug</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c">#!/bin/bash</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">IFS</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">while</span> <span class="nb">read </span>line
+</span><span class='line'><span class="k">do</span>
+</span><span class='line'>  <span class="c"># Extended display off</span>
+</span><span class='line'>  <span class="k">if</span> <span class="o">[[</span> <span class="nv">$line</span> <span class="o">=</span>~ ^<span class="se">\ </span>+<span class="o">([</span>0-9<span class="o">]</span>+<span class="o">)</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+</span><span class='line'>      <span class="nv">PID</span><span class="o">=</span><span class="k">${</span><span class="nv">BASH_REMATCH</span><span class="p">[1]</span><span class="k">}</span>
+</span><span class='line'>      <span class="nb">break</span>
+</span><span class='line'><span class="nb"> </span><span class="k">fi</span>
+</span><span class='line'>  <span class="c"># Extended display on</span>
+</span><span class='line'>  <span class="k">if</span> <span class="o">[[</span> <span class="nv">$line</span> <span class="o">=</span>~ ^pg_backend_pid.*<span class="se">\ </span><span class="o">([</span>0-9<span class="o">]</span>+<span class="o">)</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+</span><span class='line'>      <span class="nv">PID</span><span class="o">=</span><span class="k">${</span><span class="nv">BASH_REMATCH</span><span class="p">[1]</span><span class="k">}</span>
+</span><span class='line'>      <span class="nb">break</span>
+</span><span class='line'><span class="nb"> </span><span class="k">fi</span>
+</span><span class='line'><span class="k">done</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Open gdb session</span>
+</span><span class='line'>osascript -e <span class="s2">&quot;</span>
+</span><span class='line'><span class="s2">tell application \&quot;iTerm\&quot;</span>
+</span><span class='line'><span class="s2"> activate</span>
+</span><span class='line'><span class="s2"> tell the current terminal</span>
+</span><span class='line'><span class="s2">     set mysession to (the current session)</span>
+</span><span class='line'><span class="s2">     launch session \&quot;Default Session\&quot;</span>
+</span><span class='line'><span class="s2">     tell the last session</span>
+</span><span class='line'><span class="s2">         write text \&quot;gdb --pid=$PID -x &lt;(echo continue)\&quot;</span>
+</span><span class='line'><span class="s2">     end tell</span>
+</span><span class='line'><span class="s2">     select mysession</span>
+</span><span class='line'><span class="s2"> end tell</span>
+</span><span class='line'><span class="s2">end tell&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This script works for Mac OS X and iTerm2, but the same approach should work
+for other platforms and terminal emulators.</p>
+]]></content>
+  </entry>
+  
+</feed>
