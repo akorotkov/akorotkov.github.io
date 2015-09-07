@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: Pg | Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/blog/categories/pg/atom.xml" rel="self"/>
+  <title><![CDATA[Category: Jsonb | Alexander Korotkov's blog]]></title>
+  <link href="http://akorotkov.github.io/blog/categories/jsonb/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
   <updated>2015-09-07T11:33:38+03:00</updated>
   <id>http://akorotkov.github.io/</id>
@@ -413,84 +413,6 @@ multivariate  statistics use pluggable approach: user can turn on specific
 method on specific set of column. We could end up with something similar for
 jsonb: simple basic statistics + various kinds of pluggable statistics for
 specific needs.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Psql Command to Attach Gdb to Backend]]></title>
-    <link href="http://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach/"/>
-    <updated>2015-08-26T18:00:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach</id>
-    <content type="html"><![CDATA[<p>While hacking PostgreSQL it&rsquo;s very useful to know pid of the backend you are
-working with. You need to know pid of the process to attach debugger, profiler
-etc. Luckily, .psqlrc provides us an elegant way to define the shortcuts for
-psql. Using config line below one can find out backend pid just by typing <code>:pid</code>.</p>
-
-<pre><code class="sql .psqlrc">\set pid 'SELECT pg_backend_pid();'
-</code></pre>
-
-<pre><code class="sql">=# :pid
- pg_backend_pid
-----------------
-          99038
-(1 row)
-</code></pre>
-
-<p>In 9.6 it becomes possible to even <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=275f05c990c46f8dfe3cb46a3279521bda9e9e27">include backend pid into psql prompt</a>.</p>
-
-<p>However, it&rsquo;s possible to automate more complex actions in psql. I&rsquo;ve configured
-my psql to run gdb attached to current backend in new tab of iTerm2 just by
-typing <code>:gdb</code>.</p>
-
-<p><img class="no-border" src="/images/screen-psql-iterm-gdb.png"></p>
-
-<!--more-->
-
-
-<p>The <code>:gdb</code> command selects pid of current backend and puts it to the input of
-pg_debug script.</p>
-
-<pre><code class="sql .psqlrc">\set gdb 'SELECT pg_backend_pid() \\g |pg_debug'
-</code></pre>
-
-<p>pg_debug extracts pid from its input and then runs OSA script which runs gdb
-in the new tab of iTerm2.</p>
-
-<pre><code class="bash pg_debug">#!/bin/bash
-
-IFS=''
-
-while read line
-do
-    # Extended display off
-    if [[ $line =~ ^\ +([0-9]+) ]]; then
-        PID=${BASH_REMATCH[1]}
-        break
-    fi
-    # Extended display on
-    if [[ $line =~ ^pg_backend_pid.*\ ([0-9]+) ]]; then
-        PID=${BASH_REMATCH[1]}
-        break
-    fi
-done
-
-# Open gdb session
-osascript -e "
-tell application \"iTerm\"
-    activate
-    tell the current terminal
-        set mysession to (the current session)
-        launch session \"Default Session\"
-        tell the last session
-            write text \"gdb --pid=$PID -x &lt;(echo continue)\"
-        end tell
-        select mysession
-    end tell
-end tell"
-</code></pre>
-
-<p>This script works for Mac OS X and iTerm2, but the same approach should work
-for other platforms and terminal emulators.</p>
 ]]></content>
   </entry>
   

@@ -117,6 +117,59 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-09-07T11:30:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon  7 Sep 2015, 11:30 AM</time>
+        
+      </p>
+    
+    
+      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2015/09/07/jsonb_statistics/" itemprop="url">Thoughts About Jsonb Statistics</a></h2>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><h2>Introduction</h2>
+
+<p>Users of jsonb datatype frequently complaint that it lucks of statistics.
+Naturally, today jsonb statistics is just default scalar statistics, which is
+suitable for <code>&lt;</code>, <code>&lt;=</code>, <code>=</code>, <code>&gt;=</code>, <code>&gt;</code> operators selectivity estimation. But
+people search jsonb documents using <code>@&gt;</code> operator, expressions with <code>-&gt;</code>
+operator, jsquery etc. This is why selectivity estimation, which people
+typically get in their queries, is just a stub. This could lead wrong query plans
+and bad performance. And it made us introduce hints in jsquery extension.</p>
+
+<p>Thus, problem is clear. But the right solution is still unclear, at least for
+me. Let me discuss evident approaches to jsonb statistics and their limitations.</p>
+
+</div>
+  
+  
+    <footer>
+      <a class="read-more btn btn-default" href="/blog/2015/09/07/jsonb_statistics/">Read on &rarr;</a>
+    </footer>
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-08-26T18:00:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Wed 26 Aug 2015,  6:00 PM</time>
         
       </p>
@@ -193,6 +246,8 @@ typing <code>:gdb</code>.</p>
   </div>
   
   <div id="recent_posts" class="list-group">
+    
+    <a class="list-group-item " href="/blog/2015/09/07/jsonb_statistics/">Thoughts About Jsonb Statistics</a>
     
     <a class="list-group-item " href="/blog/2015/08/26/psql-gdb-attach/">Psql Command to Attach Gdb to Backend</a>
     
