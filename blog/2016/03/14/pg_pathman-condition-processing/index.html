@@ -1,26 +1,134 @@
-<?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
-
-  <title><![CDATA[Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/atom.xml" rel="self"/>
-  <link href="http://akorotkov.github.io/"/>
-  <updated>2016-03-14T11:09:30+03:00</updated>
-  <id>http://akorotkov.github.io/</id>
-  <author>
-    <name><![CDATA[Alexander Korotkov]]></name>
-    
-  </author>
-  <generator uri="http://octopress.org/">Octopress</generator>
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>How Does Pg_pathman Handle Filter Conditions? - Alexander Korotkov's blog</title>
+  <meta name="author" content="Alexander Korotkov">
 
   
-  <entry>
-    <title type="html"><![CDATA[How Does Pg_pathman Handle Filter Conditions?]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/"/>
-    <updated>2016-03-14T11:10:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing</id>
-    <content type="html"><![CDATA[<p><img class="no-border right" src="http://akorotkov.github.io/images/filter_data_icon.jpg" /></p>
+  
 
-<p>In my <a href="http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve introduced <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> as an extension which accelerate query planning over partitioned tables.  In this post I would like to covert another aspect of pg_pathman: it not only produce  plans faster, but also produce better plans.  Thanks to it query execution with pg_pathman becomes much faster in some cases.</p>
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/">
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link href="/atom.xml" rel="alternate" title="Alexander Korotkov's blog" type="application/atom+xml">
+
+  <!-- http://opengraphprotocol.org/ -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/">
+  <meta property="og:title" content="How Does Pg_pathman Handle Filter Conditions? - Alexander Korotkov's blog">
+  
+
+  <script src="/javascripts/libs/jquery/jquery-2.1.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection, print" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+  <body   >
+    <a href="#content" class="sr-only sr-only-focusable">Skip to main content</a>
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" title="toggle navbar" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Alexander Korotkov's blog</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li>
+                    <a href="http://postgrespro.com">Postgres Professional company</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="/atom.xml" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="navbar-form navbar-right" action="https://www.google.com/search" method="GET">
+                    <input type="hidden" name="sitesearch" value="akorotkov.github.io">
+                    <div class="form-group">
+                        <input class="form-control" type="text" name="q" placeholder="Search">
+                    </div>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" role="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Alexander Korotkov's blog" />
+    
+    <meta itemprop="url" content="http://akorotkov.github.io" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-14T11:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon 14 Mar 2016, 11:10 AM</time>
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        How Does Pg_pathman Handle Filter Conditions?
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border right" src="/images/filter_data_icon.jpg" /></p>
+
+<p>In my <a href="/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve introduced <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> as an extension which accelerate query planning over partitioned tables.  In this post I would like to covert another aspect of pg_pathman: it not only produce  plans faster, but also produce better plans.  Thanks to it query execution with pg_pathman becomes much faster in some cases.</p>
 
 <p>When you search partitioned table with some filter conditions, pg_pathman adopts this filter to each individual partition.  Therefore, each partition receives the only filter conditions which are useful to check against it.</p>
 
@@ -158,7 +266,7 @@
 
 <p>Let’s see how it works on simple example. The filter condition <code>(ts &gt;= '2015-02-01' AND ts &lt; '2015-03-15') OR (ts &gt;= '2015-05-15' AND ts &lt; '2015-07-01')</code> have following tree representation.</p>
 
-<p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_1.png" /></p>
+<p><img class="no-border center" src="/images/pg_pathman_condition_1.png" /></p>
 
 <p>Leaf nodes of tree are simple conditions.  Non-leaf nodes are logical operators which forms complex conditions.  For particular partition each filter condition (either simple or complex) could be treated into one of three classes.</p>
 
@@ -170,7 +278,7 @@
 
 <p>We can mark each tree node with vector of classes which corresponding condition is treated against each partition.  These vectors could be filled upwards: for leaf nodes first, and then for non-leaf nodes using tri-state logic.</p>
 
-<p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_2.png" /></p>
+<p><img class="no-border center" src="/images/pg_pathman_condition_2.png" /></p>
 
 <p>It’s evident that only conditions which could be either true or false (m) are useful for filtering.  Conditions which are always true or always false shouldn’t be presented in the partitions filter.  Using produced three we can now produce filter conditions for each partition.</p>
 
@@ -184,7 +292,7 @@
   <li>
     <p>For <code>ts &gt;= 2015-03-01 AND ts &lt; 2015-04-01</code> partition, filter condition tree would be reduced into following tree.</p>
 
-    <p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_3.png" /></p>
+    <p><img class="no-border center" src="/images/pg_pathman_condition_3.png" /></p>
 
     <p>Therefore, this partition will be scan with <code>ts &lt; '2015-03-15'</code> filter.</p>
   </li>
@@ -194,7 +302,7 @@
   <li>
     <p>For <code>ts &gt;= 2015-05-01 AND ts &lt; 2015-06-01</code> partition, filter condition tree would be reduced into following tree.</p>
 
-    <p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_4.png" /></p>
+    <p><img class="no-border center" src="/images/pg_pathman_condition_4.png" /></p>
 
     <p>Therefore, this partition will be scan with <code>ts &gt;= '2015-05-15'</code> filter.</p>
   </li>
@@ -205,564 +313,152 @@
 
 <p>This is how filter conditions processing works in <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.  The explanation could be a bit exhausting for reading, but I hope you feel enlighten by getting how it works.  I remember that pg_pathman is open source extension for PostgreSQL 9.5 in beta-release stage.  I appeal to everyone interested for trying it and sharing a feedback.</p>
 
-]]></content>
-  </entry>
+</div>
+
+
+      <footer>
+        <p class="meta text-muted">
+          
   
-  <entry>
-    <title type="html"><![CDATA[Pg_pathman Beta Release]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/"/>
-    <updated>2016-03-04T17:10:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release</id>
-    <content type="html"><![CDATA[<p><img class="no-border" src="http://akorotkov.github.io/images/partitiontable.jpg" /></p>
 
-<p>Partitioning in PostgreSQL is traditionally implemented using <a href="http://www.postgresql.org/docs/9.5/static/ddl-partitioning.html">table inheritance</a>. Table inheritance allow planner to include into plan only those child tables (partitions) which are compatible with query.  Simultaneously a lot of work on partitions management remains on users: create inherited tables, writing trigger which selects appropriate partition for row inserting etc.  In order to automate this work pg_partman extension was written.  Also, there is upcoming work on <a href="http://www.postgresql.org/message-id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a> by Amit Langote for PostgreSQL core.</p>
+<span class="glyphicon glyphicon-user"></span> <span class="byline author vcard" itemprop="author" itemscope itemtype="http://schema.org/Person">Posted by <span class="fn" itemprop="name">Alexander Korotkov</span></span>
 
-<p>In Postgres Professional we notice performance problem of inheritance based partitioning.  The problem is that planner selects children tables compatible with query by linear scan.  Thus, for query which selects just one row from one partition it would be much slower to plan than to execute.  This fact discourages many users and this is why we’re working on new PostgreSQL extension: <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.</p>
+          
 
-<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> caches partitions meta-information and uses set_rel_pathlist hook in order to replace mechanism of child tables selection by its own mechanism.  Thanks to this binary search algorithm over sorted array is used for range partitioning and hash table lookup for hash partitioning.  Therefore, time spent to partition selection appears to be negligible in comparison with forming of result plan nodes.  See <a href="http://www.postgrespro.com/blog/pgsql/pg_pathman">postgrespro blog post</a> for performance benchmarks.</p>
 
-<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> now in beta-release status and we encourage all interested users to try it and give us a feedback.  pg_pathman is compatible with PostgreSQL 9.5 and distributed under PostgreSQL license.  In the future we’re planning to enhance functionality of pg_pathman by following features.</p>
 
-<ul>
-  <li>Execute time selection of partitions using custom nodes (useful for nested loops and prepared statements);</li>
-  <li>Optimization of ordering output from partitioned tables (useful for merge join and order by);</li>
-  <li>Optimization of hash join when both tables are partitioned by join key;</li>
-  <li>LIST-partitioning;</li>
-  <li>HASH-partitioning by attributes of any hashable type.</li>
-</ul>
 
-<p>Despite we have pg_pathman useful here and now, we want this functionality to eventually become part of PostgreSQL core.  This is why we are going to join work on declarative partitioning by Amit Langote which have excellent DDL infrastructure and fulfill it with effective internal algorithms.</p>
-]]></content>
-  </entry>
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-14T11:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon 14 Mar 2016, 11:10 AM</time>
+          
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp;
+<span class="categories">
   
-  <entry>
-    <title type="html"><![CDATA[Thoughts About Jsonb Statistics]]></title>
-    <link href="http://akorotkov.github.io/blog/2015/09/07/jsonb_statistics/"/>
-    <updated>2015-09-07T11:30:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2015/09/07/jsonb_statistics</id>
-    <content type="html"><![CDATA[<h2 id="introduction">Introduction</h2>
-
-<p>Users of jsonb datatype frequently complaint that it lucks of statistics.
-Naturally, today jsonb statistics is just default scalar statistics, which is
-suitable for <code>&lt;</code>, <code>&lt;=</code>, <code>=</code>, <code>&gt;=</code>, <code>&gt;</code> operators selectivity estimation. But
-people search jsonb documents using <code>@&gt;</code> operator, expressions with <code>-&gt;</code>
-operator, jsquery etc. This is why selectivity estimation, which people
-typically get in their queries, is just a stub. This could lead wrong query plans
-and bad performance. And it made us introduce hints in jsquery extension.</p>
-
-<p>Thus, problem is clear. But the right solution is still unclear, at least for
-me. Let me discuss evident approaches to jsonb statistics and their limitations.</p>
-
-<!--more-->
-
-<h2 id="collect-just-frequent-paths">Collect just frequent paths</h2>
-
-<p>First candidate for good selectivity estimation is <code>@&gt;</code> operator. Really,
-<code>@&gt;</code> is builtin operator with GIN index support. First idea that comes into
-mind is to collect most frequent paths and their frequencies as jsonb
-statistics. In order to understand idea of paths better let’s consider how GIN
-jsonb_path_ops works. jsonb_path_ops is builtin GIN operator class, which is
-most suitable for jsonb <code>@&gt;</code> operator.</p>
-
-<p>Path is a sequence of key names, array indexes and referenced value.
-For instance, the document 
-<code>{"a": [{"b": "xyz", "c": true}, 10], "d": {"e": [7, false]}}</code>
-would be decomposed into following set of paths.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">"a".#."b"."xyz"
-</span><span class="line">"a".#."c".true
-</span><span class="line">"a".#.10
-</span><span class="line">"d"."e".#.7
-</span><span class="line">"d"."e".#.false</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>In this representation of paths array indexes are replaced with <code>#</code>. That
-allows our search to be agnostic to them like <code>@&gt;</code> operator does. Thus, when we
-have such decomposition we can say that if <code>a @&gt; b</code> then <code>a</code> paths are superset
-of <code>b</code> paths. If we intersect posting list of search argument paths then we can
-get list of candidates for search result. This is how jsonb_path_ops works.</p>
-
-<p>The same idea could be applied to jsonb statistics. We could decompose each
-jsonb document into set of paths and then collect frequencies of most common
-individual paths. Such statistics perfectly fits current PostgreSQL system
-catalog and looks very similar to statistics of tsvectors and arrays, which are
-decomposed into lexemes and elements correspondingly. Such statistics of most
-common paths could look like following table.</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Path</th>
-      <th style="text-align: right">Frequency</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>“a”.#.”b”.”xyz”</td>
-      <td style="text-align: right">0.55</td>
-    </tr>
-    <tr>
-      <td>“d”.”e”.#.77</td>
-      <td style="text-align: right">0.43</td>
-    </tr>
-    <tr>
-      <td>“a”.#.”b”.”def”</td>
-      <td style="text-align: right">0.35</td>
-    </tr>
-    <tr>
-      <td>“d”.”e”.#.100</td>
-      <td style="text-align: right">0.22</td>
-    </tr>
-    <tr>
-      <td>“d”.”f”.true</td>
-      <td style="text-align: right">0.1</td>
-    </tr>
-  </tbody>
-</table>
-
-<p>Having such statistics we can estimate selectivity of <code>@&gt;</code> operator as product
-of frequencies of search argument paths. For paths, which are not in most
-common list, we can use some default “rare frequency”. Also, we use quite rough
-assumption that paths appearance is independent. Let’s be honest: this
-assumption is just wrong. However, this is typical assumption we have to use
-during query planning. Finally, we don’t need absolutely accurate cost. Match of
-magnitude order can be considered as a quite good result.</p>
-
-<p>There is also another source or inaccuracy I’d like to mention. Let’s consider
-some example.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">a = [{"x": [1]}, {"x": [2]}]
-</span><span class="line">b = [{"x": [1,2]}]</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Both <code>a</code> and <code>b</code> are decomposed into the same set of paths.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">#."x".1
-</span><span class="line">#."x".2</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>However, neither <code>a @&gt; b</code> neither ‘b @&gt; a’. Since we ignored array indexes in
-paths we also ignore whether values beholds to same array element or not. This
-leads also to false positives in GIN and overestimations by statistics.</p>
-
-<p>This approach is not only limited by <code>@&gt;</code> operator. We can produce estimation
-for queries with complex logic. Example in jsquery could be <code>"(abc" = 1 OR
-"xyz".# = "hij") AND NOT "def" = false</code>.</p>
-
-<p>However, such statistics hardly can estimate selectivity of <code>&lt;</code>, <code>&lt;=</code>,
-<code>&gt;=</code>, <code>&gt;</code> operators over jsonb values. For instance, in order to estimate
-jsquery <code>"x" &gt; 1</code> we can only count most common paths, which match this
-condition. But we’re lacking of histograms. It is a serious obstacle in getting
-accurate estimates and it lets us search for better solution.</p>
-
-<h2 id="collect-scalar-statistics-for-each-key-path">Collect scalar statistics for each key path</h2>
-
-<p>Another idea of jsonb statistics we can get from assumption that almost every
-“schemaless” dataset can be easily represented in the schema of tables. Assuming
-this we would like our selectivity estimates for search in jsonb documents to be
-as good as those for search in plain tables.</p>
-
-<p>Let’s consider this on the example. The following json document could represent
-the information about order in e-commerce.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-</pre></td><td class="code"><pre><code class="Json"><span class="line"><span class="p">{</span>
-</span><span class="line">  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-</span><span class="line">  <span class="nt">&quot;contact&quot;</span><span class="p">:</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="nt">&quot;phone&quot;</span><span class="p">:</span> <span class="s2">&quot;212 555-1234&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="nt">&quot;address&quot;</span><span class="p">:</span> <span class="s2">&quot;10021-3100, 21 2nd Street, New York&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="nt">&quot;products&quot;</span><span class="p">:</span>
-</span><span class="line">  <span class="p">[</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">      <span class="nt">&quot;article&quot;</span><span class="p">:</span> <span class="s2">&quot;XF56120&quot;</span><span class="p">,</span>
-</span><span class="line">      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Sunglasses&quot;</span><span class="p">,</span>
-</span><span class="line">      <span class="nt">&quot;price&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
-</span><span class="line">      <span class="nt">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">1</span>
-</span><span class="line">    <span class="p">},</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">      <span class="nt">&quot;article&quot;</span><span class="p">:</span> <span class="s2">&quot;AT10789&quot;</span><span class="p">,</span>
-</span><span class="line">      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;T-Shirt&quot;</span><span class="p">,</span>
-</span><span class="line">      <span class="nt">&quot;price&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-</span><span class="line">      <span class="nt">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">  <span class="p">]</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>The same information could be represented in the following couple of tables.</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>id</th>
-      <th>contact</th>
-      <th>phone</th>
-      <th>address</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>1</td>
-      <td>John Smith</td>
-      <td>212 555-1234</td>
-      <td>10021-3100, 21 2nd Street, New York</td>
-    </tr>
-  </tbody>
-</table>
-
-<table>
-  <thead>
-    <tr>
-      <th>order_id</th>
-      <th>article</th>
-      <th>name</th>
-      <th style="text-align: right">price</th>
-      <th style="text-align: right">quantity</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>1</td>
-      <td>XF56120</td>
-      <td>Sunglasses</td>
-      <td style="text-align: right">500</td>
-      <td style="text-align: right">1</td>
-    </tr>
-    <tr>
-      <td>1</td>
-      <td>AT10789</td>
-      <td>T-Shirt</td>
-      <td style="text-align: right">100</td>
-      <td style="text-align: right">2</td>
-    </tr>
-  </tbody>
-</table>
-
-<p>What kind of statictis would be collected by PostgreSQL in the second case? It
-would be most common values and histogram for each attribute. Most common values
-(MCVs) are values, which occur in the column most frequently. Frequencies of those
-values are collected and stored as well. Histogram is described by array of
-bounds. Each bound is assumed to contain equal number of column values
-excluding MCVs (so called equi-depth histogram).</p>
-
-<p>With some simplification such statistics could be represented in the following
-table.</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Table</th>
-      <th>Attribute</th>
-      <th>Most common values</th>
-      <th>Histogram</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>order</td>
-      <td>contact</td>
-      <td>{“John Smith”: 0.05, “James Johnson”: 0.01}</td>
-      <td>[“Anthony Anderson”, “Lisa Baker”, “Sandra Phillips”]</td>
-    </tr>
-    <tr>
-      <td>product</td>
-      <td>price</td>
-      <td>{“100”: 0.1, “10”: 0.08, “50”: 0.05, “150”: 0.03}</td>
-      <td>[0, 12.5, 45.5, 250, 1000]</td>
-    </tr>
-    <tr>
-      <td>product</td>
-      <td>quantity</td>
-      <td>{“1”: 0.5, “2”: 0.2, “3”: 0.05, “5”: 0.01}</td>
-      <td>[0, 4, 7, 9, 10]</td>
-    </tr>
-    <tr>
-      <td>…….</td>
-      <td>………</td>
-      <td>………………………………………….</td>
-      <td>……………………………………………..</td>
-    </tr>
-  </tbody>
-</table>
-
-<p>What if we replace table and attribute with path of keys where corresponding
-value could be found in json document?</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Key path</th>
-      <th>Most common values</th>
-      <th>Histogram</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>contact</td>
-      <td>{“John Smith”: 0.05, “James Johnson”: 0.01}</td>
-      <td>[“Anthony Anderson”, “Lisa Baker”, “Sandra Phillips”]</td>
-    </tr>
-    <tr>
-      <td>products.#.price</td>
-      <td>{“100”: 0.1, “10”: 0.08, “50”: 0.05, “150”: 0.03}</td>
-      <td>[0, 12.5, 45.5, 250, 1000]</td>
-    </tr>
-    <tr>
-      <td>products.#.quantity</td>
-      <td>{“1”: 0.5, “2”: 0.2, “3”: 0.05, “5”: 0.01}</td>
-      <td>[0, 4, 7, 9, 10]</td>
-    </tr>
-    <tr>
-      <td>……………….</td>
-      <td>………………………………………….</td>
-      <td>……………………………………………..</td>
-    </tr>
-  </tbody>
-</table>
-
-<p>This kind of statistics seems to be comprehensive enough. It could produce fine
-estimations for queries like <code>products.#.price &gt; 100</code>.</p>
-
-<p>However, there are still bunch of open problems here.</p>
-
-<ul>
-  <li>
-    <p>Typical json documents we can meet in applications are really well structured
-as an example above. However, there are some cases when they are not. At
-first, someone could easily put values into keys. Let me illustrate this on
-the following example: <code>products</code> becomes an object where article is used as
-a key.</p>
-
-    <div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-</pre></td></tr></table></div></figure></notextile></div>
-  </li>
-</ul>
-<p>&lt;/pre&gt;&lt;/td&gt;&lt;td class='code'&gt;&lt;pre&gt;<code class="Json"><span class="line"><span class="p">{</span>
-</span><span class="line">  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-</span><span class="line">  <span class="nt">&quot;contact&quot;</span><span class="p">:</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="nt">&quot;phone&quot;</span><span class="p">:</span> <span class="s2">&quot;212 555-1234&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="nt">&quot;address&quot;</span><span class="p">:</span> <span class="s2">&quot;10021-3100, 21 2nd Street, New York&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="nt">&quot;products&quot;</span><span class="p">:</span>
-</span><span class="line">  <span class="p">{</span>
-</span><span class="line">    <span class="nt">&quot;XF56120&quot;</span><span class="p">:</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Sunglasses&quot;</span><span class="p">,</span>
-</span><span class="line">      <span class="nt">&quot;price&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
-</span><span class="line">      <span class="nt">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">1</span>
-</span><span class="line">    <span class="p">},</span>
-</span><span class="line">    <span class="nt">&quot;AT10789&quot;</span><span class="p">:</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;T-Shirt&quot;</span><span class="p">,</span>
-</span><span class="line">      <span class="nt">&quot;price&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-</span><span class="line">      <span class="nt">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">  <span class="p">}</span>
-</span><span class="line"><span class="p">}</span>
-</span><span class="line">
-</span></code>&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;&lt;/figure&gt;&lt;/notextile&gt;&lt;/div&gt;</p>
-
-<pre><code>In this case we can find that cardinality of key paths are very high. Thus,
-we would be unable to collect suitable statistics for each key path.
-However, we could consider such situation as user mistake. Then we should
-advise users to restructure their documents.
-
-There are still kind of documents, which don't fit this model not because of
-user mistake but because of their nature. Imagine json formatted query plans
-stored in the table. Plans could have unlimited levels of nesting and
-correspondingly cardinality of key paths could be very high.
-</code></pre>
-
-<ul>
-  <li>
-    <p>Some objects stored inside jsonb documents could require special statistics.
-For instance, point coordinates could be represented in json as
-<code>{"x": 11.3, "y": 27.0}</code>. But statistics we will need in this case is not
-separate statistics for <code>x</code> and <code>y</code>. We would need something special for
-geometrical objects like 2D-histograms.</p>
-  </li>
-  <li>
-    <p>Another problem is fitting this model into PostgreSQL system catalog.
-<code>pg_statistic</code> assumes that statistics of attribute is represented by few
-arrays. However, in this model we have to store few arrays per each key
-path. For sure, we do a trick by storing array of jsonb or something like
-this, but that would be a kluge. It would be nice to store each key path in
-the separate row of <code>pg_statistic</code>. This would require significant changes
-in statistics handling though.</p>
-  </li>
-</ul>
-
-<h2 id="conclusion">Conclusion</h2>
-
-<p>This was just my current thoughts about jsonb statistics. Probably, someone come
-with much better ideas. But I’m not sure we can find ideal solution, which
-would fit everyone needs. We can see that current developments in
-multivariate  statistics use pluggable approach: user can turn on specific
-method on specific set of column. We could end up with something similar for
-jsonb: simple basic statistics + various kinds of pluggable statistics for
-specific needs.</p>
-]]></content>
-  </entry>
+    <a class='category' href='/blog/categories/condition/'>condition</a>, <a class='category' href='/blog/categories/filter/'>filter</a>, <a class='category' href='/blog/categories/partitioning/'>partitioning</a>, <a class='category' href='/blog/categories/pg/'>pg</a>, <a class='category' href='/blog/categories/pg-pathman/'>pg_pathman</a>
   
-  <entry>
-    <title type="html"><![CDATA[Psql Command to Attach Gdb to Backend]]></title>
-    <link href="http://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach/"/>
-    <updated>2015-08-26T18:00:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach</id>
-    <content type="html"><![CDATA[<p>While hacking PostgreSQL it’s very useful to know pid of the backend you are
-working with. You need to know pid of the process to attach debugger, profiler
-etc. Luckily, .psqlrc provides us an elegant way to define the shortcuts for
-psql. Using config line below one can find out backend pid just by typing <code>:pid</code>.</p>
+</span>
 
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>.psqlrc</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="err">\</span><span class="k">set</span> <span class="n">pid</span> <span class="s1">&#39;SELECT pg_backend_pid();&#39;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">=#</span> <span class="p">:</span><span class="n">pid</span>
-</span><span class="line"> <span class="n">pg_backend_pid</span>
-</span><span class="line"><span class="c1">----------------</span>
-</span><span class="line">          <span class="mi">99038</span>
-</span><span class="line"><span class="p">(</span><span class="mi">1</span> <span class="k">row</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>In 9.6 it becomes possible to even <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=275f05c990c46f8dfe3cb46a3279521bda9e9e27">include backend pid into psql prompt</a>.</p>
-
-<p>However, it’s possible to automate more complex actions in psql. I’ve configured
-my psql to run gdb attached to current backend in new tab of iTerm2 just by
-typing <code>:gdb</code>.</p>
-
-<p><img class="no-border" src="http://akorotkov.github.io/images/screen-psql-iterm-gdb.png" /></p>
-
-<!--more-->
-
-<p>The <code>:gdb</code> command selects pid of current backend and puts it to the input of
-pg_debug script.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>.psqlrc</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="err">\</span><span class="k">set</span> <span class="n">gdb</span> <span class="s1">&#39;SELECT pg_backend_pid() \\g |pg_debug&#39;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>pg_debug extracts pid from its input and then runs OSA script which runs gdb
-in the new tab of iTerm2.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>pg_debug</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-<span class="line-number">31</span>
-</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="c">#!/bin/bash</span>
-</span><span class="line">
-</span><span class="line"><span class="nv">IFS</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
-</span><span class="line">
-</span><span class="line"><span class="k">while</span> <span class="nb">read </span>line
-</span><span class="line"><span class="k">do</span>
-</span><span class="line">	<span class="c"># Extended display off</span>
-</span><span class="line">	<span class="k">if</span> <span class="o">[[</span> <span class="nv">$line</span> <span class="o">=</span>~ ^<span class="se">\ </span>+<span class="o">([</span>0-9<span class="o">]</span>+<span class="o">)</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
-</span><span class="line">		<span class="nv">PID</span><span class="o">=</span><span class="k">${</span><span class="nv">BASH_REMATCH</span><span class="p">[1]</span><span class="k">}</span>
-</span><span class="line">		<span class="nb">break</span>
-</span><span class="line"><span class="nb">	</span><span class="k">fi</span>
-</span><span class="line">	<span class="c"># Extended display on</span>
-</span><span class="line">	<span class="k">if</span> <span class="o">[[</span> <span class="nv">$line</span> <span class="o">=</span>~ ^pg_backend_pid.*<span class="se">\ </span><span class="o">([</span>0-9<span class="o">]</span>+<span class="o">)</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
-</span><span class="line">		<span class="nv">PID</span><span class="o">=</span><span class="k">${</span><span class="nv">BASH_REMATCH</span><span class="p">[1]</span><span class="k">}</span>
-</span><span class="line">		<span class="nb">break</span>
-</span><span class="line"><span class="nb">	</span><span class="k">fi</span>
-</span><span class="line"><span class="k">done</span>
-</span><span class="line">
-</span><span class="line"><span class="c"># Open gdb session</span>
-</span><span class="line">osascript -e <span class="s2">&quot;</span>
-</span><span class="line"><span class="s2">tell application \&quot;iTerm\&quot;</span>
-</span><span class="line"><span class="s2">	activate</span>
-</span><span class="line"><span class="s2">	tell the current terminal</span>
-</span><span class="line"><span class="s2">		set mysession to (the current session)</span>
-</span><span class="line"><span class="s2">		launch session \&quot;Default Session\&quot;</span>
-</span><span class="line"><span class="s2">		tell the last session</span>
-</span><span class="line"><span class="s2">			write text \&quot;gdb --pid=$PID -x &lt;(echo continue)\&quot;</span>
-</span><span class="line"><span class="s2">		end tell</span>
-</span><span class="line"><span class="s2">		select mysession</span>
-</span><span class="line"><span class="s2">	end tell</span>
-</span><span class="line"><span class="s2">end tell&quot;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>This script works for Mac OS X and iTerm2, but the same approach should work
-for other platforms and terminal emulators.</p>
-]]></content>
-  </entry>
+        </p>
+        
+          <div class="sharing">
   
-</feed>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/2016/03/04/pg_pathman-beta-release/" title="Previous Post: pg_pathman beta release">&laquo; pg_pathman beta release</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h2>Comments</h2>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      <section class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Recent Posts</h3>
+  </div>
+  
+  <div id="recent_posts" class="list-group">
+    
+    <a class="list-group-item active" href="/blog/2016/03/14/pg_pathman-condition-processing/">How Does Pg_pathman Handle Filter Conditions?</a>
+    
+    <a class="list-group-item " href="/blog/2016/03/04/pg_pathman-beta-release/">Pg_pathman Beta Release</a>
+    
+    <a class="list-group-item " href="/blog/2015/09/07/jsonb_statistics/">Thoughts About Jsonb Statistics</a>
+    
+    <a class="list-group-item " href="/blog/2015/08/26/psql-gdb-attach/">Psql Command to Attach Gdb to Backend</a>
+    
+  </div>
+</section>
+
+
+
+
+
+
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Alexander Korotkov<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'akorotkov';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/';
+        var disqus_url = 'http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr.js"></script>
+
+
+  </body>
+</html>

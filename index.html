@@ -62,7 +62,7 @@
                     <a href="/blog/archives">Archives</a>
                 </li>
                 <li>
-                    <a href="http://postgrespro.ru">Postgres Professional company</a>
+                    <a href="http://postgrespro.com">Postgres Professional company</a>
                 </li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
@@ -117,6 +117,54 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-14T11:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon 14 Mar 2016, 11:10 AM</time>
+        
+      </p>
+    
+    
+      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2016/03/14/pg_pathman-condition-processing/" itemprop="url">How Does Pg_pathman Handle Filter Conditions?</a></h2>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border right" src="/images/filter_data_icon.jpg" /></p>
+
+<p>In my <a href="/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve introduced <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> as an extension which accelerate query planning over partitioned tables.  In this post I would like to covert another aspect of pg_pathman: it not only produce  plans faster, but also produce better plans.  Thanks to it query execution with pg_pathman becomes much faster in some cases.</p>
+
+<p>When you search partitioned table with some filter conditions, pg_pathman adopts this filter to each individual partition.  Therefore, each partition receives the only filter conditions which are useful to check against it.</p>
+
+<p>Let me illustrate this on the example.  At first, let’s see what’s happening with filter conditions while dealing with PostgreSQL inheritance mechanism.</p>
+
+</div>
+  
+  
+    <footer>
+      <a class="read-more btn btn-default" href="/blog/2016/03/14/pg_pathman-condition-processing/">Read on &rarr;</a>
+    </footer>
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-04T17:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri  4 Mar 2016,  5:10 PM</time>
         
       </p>
@@ -127,24 +175,23 @@
   </header>
 
 
-  <div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border" src="/images/partitiontable.jpg"></p>
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border" src="/images/partitiontable.jpg" /></p>
 
 <p>Partitioning in PostgreSQL is traditionally implemented using <a href="http://www.postgresql.org/docs/9.5/static/ddl-partitioning.html">table inheritance</a>. Table inheritance allow planner to include into plan only those child tables (partitions) which are compatible with query.  Simultaneously a lot of work on partitions management remains on users: create inherited tables, writing trigger which selects appropriate partition for row inserting etc.  In order to automate this work pg_partman extension was written.  Also, there is upcoming work on <a href="http://www.postgresql.org/message-id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a> by Amit Langote for PostgreSQL core.</p>
 
-<p>In Postgres Professional we notice performance problem of inheritance based partitioning.  The problem is that planner selects children tables compatible with query by linear scan.  Thus, for query which selects just one row from one partition it would be much slower to plan than to execute.  This fact discourages many users and this is why we&rsquo;re working on new PostgreSQL extension: <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.</p>
+<p>In Postgres Professional we notice performance problem of inheritance based partitioning.  The problem is that planner selects children tables compatible with query by linear scan.  Thus, for query which selects just one row from one partition it would be much slower to plan than to execute.  This fact discourages many users and this is why we’re working on new PostgreSQL extension: <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.</p>
 
 <p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> caches partitions meta-information and uses set_rel_pathlist hook in order to replace mechanism of child tables selection by its own mechanism.  Thanks to this binary search algorithm over sorted array is used for range partitioning and hash table lookup for hash partitioning.  Therefore, time spent to partition selection appears to be negligible in comparison with forming of result plan nodes.  See <a href="http://www.postgrespro.com/blog/pgsql/pg_pathman">postgrespro blog post</a> for performance benchmarks.</p>
 
-<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> now in beta-release status and we encourage all interested users to try it and give us a feedback.  pg_pathman is compatible with PostgreSQL 9.5 and distributed under PostgreSQL license.  In the future we&rsquo;re planning to enhance functionality of pg_pathman by following features.</p>
+<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> now in beta-release status and we encourage all interested users to try it and give us a feedback.  pg_pathman is compatible with PostgreSQL 9.5 and distributed under PostgreSQL license.  In the future we’re planning to enhance functionality of pg_pathman by following features.</p>
 
 <ul>
-<li>Execute time selection of partitions using custom nodes (useful for nested loops and prepared statements);</li>
-<li>Optimization of ordering output from partitioned tables (useful for merge join and order by);</li>
-<li>Optimization of hash join when both tables are partitioned by join key;</li>
-<li>LIST-partitioning;</li>
-<li>HASH-partitioning by attributes of any hashable type.</li>
+  <li>Execute time selection of partitions using custom nodes (useful for nested loops and prepared statements);</li>
+  <li>Optimization of ordering output from partitioned tables (useful for merge join and order by);</li>
+  <li>Optimization of hash join when both tables are partitioned by join key;</li>
+  <li>LIST-partitioning;</li>
+  <li>HASH-partitioning by attributes of any hashable type.</li>
 </ul>
-
 
 <p>Despite we have pg_pathman useful here and now, we want this functionality to eventually become part of PostgreSQL core.  This is why we are going to join work on declarative partitioning by Amit Langote which have excellent DDL infrastructure and fulfill it with effective internal algorithms.</p>
 </div>
@@ -183,7 +230,7 @@
   </header>
 
 
-  <div class="entry-content clearfix" itemprop="articleBody description"><h2>Introduction</h2>
+  <div class="entry-content clearfix" itemprop="articleBody description"><h2 id="introduction">Introduction</h2>
 
 <p>Users of jsonb datatype frequently complaint that it lucks of statistics.
 Naturally, today jsonb statistics is just default scalar statistics, which is
@@ -236,38 +283,34 @@ me. Let me discuss evident approaches to jsonb statistics and their limitations.
   </header>
 
 
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>While hacking PostgreSQL it&rsquo;s very useful to know pid of the backend you are
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>While hacking PostgreSQL it’s very useful to know pid of the backend you are
 working with. You need to know pid of the process to attach debugger, profiler
 etc. Luckily, .psqlrc provides us an elegant way to define the shortcuts for
 psql. Using config line below one can find out backend pid just by typing <code>:pid</code>.</p>
 
-<figure class='code'><figcaption><span>.psqlrc</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="err">\</span><span class="k">set</span> <span class="n">pid</span> <span class="s1">&#39;SELECT pg_backend_pid();&#39;</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>.psqlrc</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="err">\</span><span class="k">set</span> <span class="n">pid</span> <span class="s1">&#39;SELECT pg_backend_pid();&#39;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="o">=#</span> <span class="p">:</span><span class="n">pid</span>
-</span><span class='line'> <span class="n">pg_backend_pid</span>
-</span><span class='line'><span class="c1">----------------</span>
-</span><span class='line'>          <span class="mi">99038</span>
-</span><span class='line'><span class="p">(</span><span class="mi">1</span> <span class="k">row</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">=#</span> <span class="p">:</span><span class="n">pid</span>
+</span><span class="line"> <span class="n">pg_backend_pid</span>
+</span><span class="line"><span class="c1">----------------</span>
+</span><span class="line">          <span class="mi">99038</span>
+</span><span class="line"><span class="p">(</span><span class="mi">1</span> <span class="k">row</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>In 9.6 it becomes possible to even <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=275f05c990c46f8dfe3cb46a3279521bda9e9e27">include backend pid into psql prompt</a>.</p>
 
-<p>However, it&rsquo;s possible to automate more complex actions in psql. I&rsquo;ve configured
+<p>However, it’s possible to automate more complex actions in psql. I’ve configured
 my psql to run gdb attached to current backend in new tab of iTerm2 just by
 typing <code>:gdb</code>.</p>
 
-<p><img class="no-border" src="/images/screen-psql-iterm-gdb.png"></p>
+<p><img class="no-border" src="/images/screen-psql-iterm-gdb.png" /></p>
 
 </div>
   
@@ -302,6 +345,8 @@ typing <code>:gdb</code>.</p>
   </div>
   
   <div id="recent_posts" class="list-group">
+    
+    <a class="list-group-item " href="/blog/2016/03/14/pg_pathman-condition-processing/">How Does Pg_pathman Handle Filter Conditions?</a>
     
     <a class="list-group-item " href="/blog/2016/03/04/pg_pathman-beta-release/">Pg_pathman Beta Release</a>
     

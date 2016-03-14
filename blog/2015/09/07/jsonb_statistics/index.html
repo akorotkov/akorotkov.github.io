@@ -62,7 +62,7 @@
                     <a href="/blog/archives">Archives</a>
                 </li>
                 <li>
-                    <a href="http://postgrespro.ru">Postgres Professional company</a>
+                    <a href="http://postgrespro.com">Postgres Professional company</a>
                 </li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
@@ -126,7 +126,7 @@
   </header>
 
 
-<div class="entry-content clearfix" itemprop="articleBody description"><h2>Introduction</h2>
+<div class="entry-content clearfix" itemprop="articleBody description"><h2 id="introduction">Introduction</h2>
 
 <p>Users of jsonb datatype frequently complaint that it lucks of statistics.
 Naturally, today jsonb statistics is just default scalar statistics, which is
@@ -141,32 +141,30 @@ me. Let me discuss evident approaches to jsonb statistics and their limitations.
 
 <!--more-->
 
-
-<h2>Collect just frequent paths</h2>
+<h2 id="collect-just-frequent-paths">Collect just frequent paths</h2>
 
 <p>First candidate for good selectivity estimation is <code>@&gt;</code> operator. Really,
 <code>@&gt;</code> is builtin operator with GIN index support. First idea that comes into
 mind is to collect most frequent paths and their frequencies as jsonb
-statistics. In order to understand idea of paths better let&rsquo;s consider how GIN
+statistics. In order to understand idea of paths better let’s consider how GIN
 jsonb_path_ops works. jsonb_path_ops is builtin GIN operator class, which is
 most suitable for jsonb <code>@&gt;</code> operator.</p>
 
 <p>Path is a sequence of key names, array indexes and referenced value.
-For instance, the document
+For instance, the document 
 <code>{"a": [{"b": "xyz", "c": true}, 10], "d": {"e": [7, false]}}</code>
 would be decomposed into following set of paths.</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>"a".#."b"."xyz"
-</span><span class='line'>"a".#."c".true
-</span><span class='line'>"a".#.10
-</span><span class='line'>"d"."e".#.7
-</span><span class='line'>"d"."e".#.false</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">"a".#."b"."xyz"
+</span><span class="line">"a".#."c".true
+</span><span class="line">"a".#.10
+</span><span class="line">"d"."e".#.7
+</span><span class="line">"d"."e".#.false</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>In this representation of paths array indexes are replaced with <code>#</code>. That
 allows our search to be agnostic to them like <code>@&gt;</code> operator does. Thus, when we
@@ -182,63 +180,60 @@ decomposed into lexemes and elements correspondingly. Such statistics of most
 common paths could look like following table.</p>
 
 <table>
-<thead>
-<tr>
-<th> Path            </th>
-<th style="text-align:right;"> Frequency </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td> &ldquo;a&rdquo;.#.&ldquo;b&rdquo;.&ldquo;xyz&rdquo; </td>
-<td style="text-align:right;">      0.55 </td>
-</tr>
-<tr>
-<td> &ldquo;d&rdquo;.&ldquo;e&rdquo;.#.77    </td>
-<td style="text-align:right;">      0.43 </td>
-</tr>
-<tr>
-<td> &ldquo;a&rdquo;.#.&ldquo;b&rdquo;.&ldquo;def&rdquo; </td>
-<td style="text-align:right;">      0.35 </td>
-</tr>
-<tr>
-<td> &ldquo;d&rdquo;.&ldquo;e&rdquo;.#.100   </td>
-<td style="text-align:right;">      0.22 </td>
-</tr>
-<tr>
-<td> &ldquo;d&rdquo;.&ldquo;f&rdquo;.true    </td>
-<td style="text-align:right;">       0.1 </td>
-</tr>
-</tbody>
+  <thead>
+    <tr>
+      <th>Path</th>
+      <th style="text-align: right">Frequency</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>“a”.#.”b”.”xyz”</td>
+      <td style="text-align: right">0.55</td>
+    </tr>
+    <tr>
+      <td>“d”.”e”.#.77</td>
+      <td style="text-align: right">0.43</td>
+    </tr>
+    <tr>
+      <td>“a”.#.”b”.”def”</td>
+      <td style="text-align: right">0.35</td>
+    </tr>
+    <tr>
+      <td>“d”.”e”.#.100</td>
+      <td style="text-align: right">0.22</td>
+    </tr>
+    <tr>
+      <td>“d”.”f”.true</td>
+      <td style="text-align: right">0.1</td>
+    </tr>
+  </tbody>
 </table>
-
 
 <p>Having such statistics we can estimate selectivity of <code>@&gt;</code> operator as product
 of frequencies of search argument paths. For paths, which are not in most
-common list, we can use some default &ldquo;rare frequency&rdquo;. Also, we use quite rough
-assumption that paths appearance is independent. Let&rsquo;s be honest: this
+common list, we can use some default “rare frequency”. Also, we use quite rough
+assumption that paths appearance is independent. Let’s be honest: this
 assumption is just wrong. However, this is typical assumption we have to use
-during query planning. Finally, we don&rsquo;t need absolutely accurate cost. Match of
+during query planning. Finally, we don’t need absolutely accurate cost. Match of
 magnitude order can be considered as a quite good result.</p>
 
-<p>There is also another source or inaccuracy I&rsquo;d like to mention. Let&rsquo;s consider
+<p>There is also another source or inaccuracy I’d like to mention. Let’s consider
 some example.</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>a = [{"x": [1]}, {"x": [2]}]
-</span><span class='line'>b = [{"x": [1,2]}]</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">a = [{"x": [1]}, {"x": [2]}]
+</span><span class="line">b = [{"x": [1,2]}]</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>Both <code>a</code> and <code>b</code> are decomposed into the same set of paths.</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#."x".1
-</span><span class='line'>#."x".2</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">#."x".1
+</span><span class="line">#."x".2</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-
-<p>However, neither <code>a @&gt; b</code> neither &lsquo;b @> a&rsquo;. Since we ignored array indexes in
+<p>However, neither <code>a @&gt; b</code> neither ‘b @&gt; a’. Since we ignored array indexes in
 paths we also ignore whether values beholds to same array element or not. This
 leads also to false positives in GIN and overestimations by statistics.</p>
 
@@ -249,114 +244,111 @@ for queries with complex logic. Example in jsquery could be <code>"(abc" = 1 OR
 <p>However, such statistics hardly can estimate selectivity of <code>&lt;</code>, <code>&lt;=</code>,
 <code>&gt;=</code>, <code>&gt;</code> operators over jsonb values. For instance, in order to estimate
 jsquery <code>"x" &gt; 1</code> we can only count most common paths, which match this
-condition. But we&rsquo;re lacking of histograms. It is a serious obstacle in getting
+condition. But we’re lacking of histograms. It is a serious obstacle in getting
 accurate estimates and it lets us search for better solution.</p>
 
-<h2>Collect scalar statistics for each key path</h2>
+<h2 id="collect-scalar-statistics-for-each-key-path">Collect scalar statistics for each key path</h2>
 
 <p>Another idea of jsonb statistics we can get from assumption that almost every
-&ldquo;schemaless&rdquo; dataset can be easily represented in the schema of tables. Assuming
+“schemaless” dataset can be easily represented in the schema of tables. Assuming
 this we would like our selectivity estimates for search in jsonb documents to be
 as good as those for search in plain tables.</p>
 
-<p>Let&rsquo;s consider this on the example. The following json document could represent
+<p>Let’s consider this on the example. The following json document could represent
 the information about order in e-commerce.</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='Json'><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-</span><span class='line'>  <span class="nt">&quot;contact&quot;</span><span class="p">:</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span>
-</span><span class='line'>  <span class="nt">&quot;phone&quot;</span><span class="p">:</span> <span class="s2">&quot;212 555-1234&quot;</span><span class="p">,</span>
-</span><span class='line'>  <span class="nt">&quot;address&quot;</span><span class="p">:</span> <span class="s2">&quot;10021-3100, 21 2nd Street, New York&quot;</span><span class="p">,</span>
-</span><span class='line'>  <span class="nt">&quot;products&quot;</span><span class="p">:</span>
-</span><span class='line'>  <span class="p">[</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;article&quot;</span><span class="p">:</span> <span class="s2">&quot;XF56120&quot;</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Sunglasses&quot;</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;price&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="p">},</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;article&quot;</span><span class="p">:</span> <span class="s2">&quot;AT10789&quot;</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;T-Shirt&quot;</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;price&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">]</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+</pre></td><td class="code"><pre><code class="Json"><span class="line"><span class="p">{</span>
+</span><span class="line">  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class="line">  <span class="nt">&quot;contact&quot;</span><span class="p">:</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span>
+</span><span class="line">  <span class="nt">&quot;phone&quot;</span><span class="p">:</span> <span class="s2">&quot;212 555-1234&quot;</span><span class="p">,</span>
+</span><span class="line">  <span class="nt">&quot;address&quot;</span><span class="p">:</span> <span class="s2">&quot;10021-3100, 21 2nd Street, New York&quot;</span><span class="p">,</span>
+</span><span class="line">  <span class="nt">&quot;products&quot;</span><span class="p">:</span>
+</span><span class="line">  <span class="p">[</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">      <span class="nt">&quot;article&quot;</span><span class="p">:</span> <span class="s2">&quot;XF56120&quot;</span><span class="p">,</span>
+</span><span class="line">      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Sunglasses&quot;</span><span class="p">,</span>
+</span><span class="line">      <span class="nt">&quot;price&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+</span><span class="line">      <span class="nt">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">1</span>
+</span><span class="line">    <span class="p">},</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">      <span class="nt">&quot;article&quot;</span><span class="p">:</span> <span class="s2">&quot;AT10789&quot;</span><span class="p">,</span>
+</span><span class="line">      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;T-Shirt&quot;</span><span class="p">,</span>
+</span><span class="line">      <span class="nt">&quot;price&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+</span><span class="line">      <span class="nt">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">2</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">  <span class="p">]</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>The same information could be represented in the following couple of tables.</p>
 
 <table>
-<thead>
-<tr>
-<th> id </th>
-<th> contact    </th>
-<th> phone        </th>
-<th> address                             </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td> 1  </td>
-<td> John Smith </td>
-<td> 212 555-1234 </td>
-<td> 10021-3100, 21 2nd Street, New York </td>
-</tr>
-</tbody>
+  <thead>
+    <tr>
+      <th>id</th>
+      <th>contact</th>
+      <th>phone</th>
+      <th>address</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>John Smith</td>
+      <td>212 555-1234</td>
+      <td>10021-3100, 21 2nd Street, New York</td>
+    </tr>
+  </tbody>
 </table>
-
 
 <table>
-<thead>
-<tr>
-<th> order_id </th>
-<th> article </th>
-<th> name       </th>
-<th style="text-align:right;"> price </th>
-<th style="text-align:right;"> quantity </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>        1 </td>
-<td> XF56120 </td>
-<td> Sunglasses </td>
-<td style="text-align:right;">   500 </td>
-<td style="text-align:right;">        1 </td>
-</tr>
-<tr>
-<td>        1 </td>
-<td> AT10789 </td>
-<td> T-Shirt    </td>
-<td style="text-align:right;">   100 </td>
-<td style="text-align:right;">        2 </td>
-</tr>
-</tbody>
+  <thead>
+    <tr>
+      <th>order_id</th>
+      <th>article</th>
+      <th>name</th>
+      <th style="text-align: right">price</th>
+      <th style="text-align: right">quantity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>XF56120</td>
+      <td>Sunglasses</td>
+      <td style="text-align: right">500</td>
+      <td style="text-align: right">1</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>AT10789</td>
+      <td>T-Shirt</td>
+      <td style="text-align: right">100</td>
+      <td style="text-align: right">2</td>
+    </tr>
+  </tbody>
 </table>
-
 
 <p>What kind of statictis would be collected by PostgreSQL in the second case? It
 would be most common values and histogram for each attribute. Most common values
@@ -369,78 +361,76 @@ excluding MCVs (so called equi-depth histogram).</p>
 table.</p>
 
 <table>
-<thead>
-<tr>
-<th> Table   </th>
-<th> Attribute </th>
-<th> Most common values                                </th>
-<th> Histogram                                             </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td> order   </td>
-<td> contact   </td>
-<td> {&ldquo;John Smith&rdquo;: 0.05, &ldquo;James Johnson&rdquo;: 0.01}       </td>
-<td> [&ldquo;Anthony Anderson&rdquo;, &ldquo;Lisa Baker&rdquo;, &ldquo;Sandra Phillips&rdquo;] </td>
-</tr>
-<tr>
-<td> product </td>
-<td> price     </td>
-<td> {&ldquo;100&rdquo;: 0.1, &ldquo;10&rdquo;: 0.08, &ldquo;50&rdquo;: 0.05, &ldquo;150&rdquo;: 0.03} </td>
-<td> [0, 12.5, 45.5, 250, 1000]                            </td>
-</tr>
-<tr>
-<td> product </td>
-<td> quantity  </td>
-<td> {&ldquo;1&rdquo;: 0.5, &ldquo;2&rdquo;: 0.2, &ldquo;3&rdquo;: 0.05, &ldquo;5&rdquo;: 0.01}        </td>
-<td> [0, 4, 7, 9, 10]                                      </td>
-</tr>
-<tr>
-<td> &hellip;&hellip;. </td>
-<td> &hellip;&hellip;&hellip; </td>
-<td> &hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;. </td>
-<td> &hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;.. </td>
-</tr>
-</tbody>
+  <thead>
+    <tr>
+      <th>Table</th>
+      <th>Attribute</th>
+      <th>Most common values</th>
+      <th>Histogram</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>order</td>
+      <td>contact</td>
+      <td>{“John Smith”: 0.05, “James Johnson”: 0.01}</td>
+      <td>[“Anthony Anderson”, “Lisa Baker”, “Sandra Phillips”]</td>
+    </tr>
+    <tr>
+      <td>product</td>
+      <td>price</td>
+      <td>{“100”: 0.1, “10”: 0.08, “50”: 0.05, “150”: 0.03}</td>
+      <td>[0, 12.5, 45.5, 250, 1000]</td>
+    </tr>
+    <tr>
+      <td>product</td>
+      <td>quantity</td>
+      <td>{“1”: 0.5, “2”: 0.2, “3”: 0.05, “5”: 0.01}</td>
+      <td>[0, 4, 7, 9, 10]</td>
+    </tr>
+    <tr>
+      <td>…….</td>
+      <td>………</td>
+      <td>………………………………………….</td>
+      <td>……………………………………………..</td>
+    </tr>
+  </tbody>
 </table>
-
 
 <p>What if we replace table and attribute with path of keys where corresponding
 value could be found in json document?</p>
 
 <table>
-<thead>
-<tr>
-<th> Key path            </th>
-<th> Most common values                                </th>
-<th> Histogram                                             </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td> contact             </td>
-<td> {&ldquo;John Smith&rdquo;: 0.05, &ldquo;James Johnson&rdquo;: 0.01}       </td>
-<td> [&ldquo;Anthony Anderson&rdquo;, &ldquo;Lisa Baker&rdquo;, &ldquo;Sandra Phillips&rdquo;] </td>
-</tr>
-<tr>
-<td> products.#.price    </td>
-<td> {&ldquo;100&rdquo;: 0.1, &ldquo;10&rdquo;: 0.08, &ldquo;50&rdquo;: 0.05, &ldquo;150&rdquo;: 0.03} </td>
-<td> [0, 12.5, 45.5, 250, 1000]                            </td>
-</tr>
-<tr>
-<td> products.#.quantity </td>
-<td> {&ldquo;1&rdquo;: 0.5, &ldquo;2&rdquo;: 0.2, &ldquo;3&rdquo;: 0.05, &ldquo;5&rdquo;: 0.01}        </td>
-<td> [0, 4, 7, 9, 10]                                      </td>
-</tr>
-<tr>
-<td> &hellip;&hellip;&hellip;&hellip;&hellip;&hellip;. </td>
-<td> &hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;. </td>
-<td> &hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;&hellip;.. </td>
-</tr>
-</tbody>
+  <thead>
+    <tr>
+      <th>Key path</th>
+      <th>Most common values</th>
+      <th>Histogram</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>contact</td>
+      <td>{“John Smith”: 0.05, “James Johnson”: 0.01}</td>
+      <td>[“Anthony Anderson”, “Lisa Baker”, “Sandra Phillips”]</td>
+    </tr>
+    <tr>
+      <td>products.#.price</td>
+      <td>{“100”: 0.1, “10”: 0.08, “50”: 0.05, “150”: 0.03}</td>
+      <td>[0, 12.5, 45.5, 250, 1000]</td>
+    </tr>
+    <tr>
+      <td>products.#.quantity</td>
+      <td>{“1”: 0.5, “2”: 0.2, “3”: 0.05, “5”: 0.01}</td>
+      <td>[0, 4, 7, 9, 10]</td>
+    </tr>
+    <tr>
+      <td>……………….</td>
+      <td>………………………………………….</td>
+      <td>……………………………………………..</td>
+    </tr>
+  </tbody>
 </table>
-
 
 <p>This kind of statistics seems to be comprehensive enough. It could produce fine
 estimations for queries like <code>products.#.price &gt; 100</code>.</p>
@@ -448,86 +438,96 @@ estimations for queries like <code>products.#.price &gt; 100</code>.</p>
 <p>However, there are still bunch of open problems here.</p>
 
 <ul>
-<li><p>Typical json documents we can meet in applications are really well structured
+  <li>
+    <p>Typical json documents we can meet in applications are really well structured
 as an example above. However, there are some cases when they are not. At
 first, someone could easily put values into keys. Let me illustrate this on
 the following example: <code>products</code> becomes an object where article is used as
 a key.</p>
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='Json'><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-</span><span class='line'>  <span class="nt">&quot;contact&quot;</span><span class="p">:</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span>
-</span><span class='line'>  <span class="nt">&quot;phone&quot;</span><span class="p">:</span> <span class="s2">&quot;212 555-1234&quot;</span><span class="p">,</span>
-</span><span class='line'>  <span class="nt">&quot;address&quot;</span><span class="p">:</span> <span class="s2">&quot;10021-3100, 21 2nd Street, New York&quot;</span><span class="p">,</span>
-</span><span class='line'>  <span class="nt">&quot;products&quot;</span><span class="p">:</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>    <span class="nt">&quot;XF56120&quot;</span><span class="p">:</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Sunglasses&quot;</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;price&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="p">},</span>
-</span><span class='line'>    <span class="nt">&quot;AT10789&quot;</span><span class="p">:</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;T-Shirt&quot;</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;price&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span></code></pre></td></tr></table></div></figure></p>
+    <div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+</pre></td></tr></table></div></figure></notextile></div>
+  </li>
+</ul>
+<p>&lt;/pre&gt;&lt;/td&gt;&lt;td class='code'&gt;&lt;pre&gt;<code class="Json"><span class="line"><span class="p">{</span>
+</span><span class="line">  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class="line">  <span class="nt">&quot;contact&quot;</span><span class="p">:</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span>
+</span><span class="line">  <span class="nt">&quot;phone&quot;</span><span class="p">:</span> <span class="s2">&quot;212 555-1234&quot;</span><span class="p">,</span>
+</span><span class="line">  <span class="nt">&quot;address&quot;</span><span class="p">:</span> <span class="s2">&quot;10021-3100, 21 2nd Street, New York&quot;</span><span class="p">,</span>
+</span><span class="line">  <span class="nt">&quot;products&quot;</span><span class="p">:</span>
+</span><span class="line">  <span class="p">{</span>
+</span><span class="line">    <span class="nt">&quot;XF56120&quot;</span><span class="p">:</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Sunglasses&quot;</span><span class="p">,</span>
+</span><span class="line">      <span class="nt">&quot;price&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+</span><span class="line">      <span class="nt">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">1</span>
+</span><span class="line">    <span class="p">},</span>
+</span><span class="line">    <span class="nt">&quot;AT10789&quot;</span><span class="p">:</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;T-Shirt&quot;</span><span class="p">,</span>
+</span><span class="line">      <span class="nt">&quot;price&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+</span><span class="line">      <span class="nt">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">2</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span></code>&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;&lt;/figure&gt;&lt;/notextile&gt;&lt;/div&gt;</p>
 
-<p>  In this case we can find that cardinality of key paths are very high. Thus,
-  we would be unable to collect suitable statistics for each key path.
-  However, we could consider such situation as user mistake. Then we should
-  advise users to restructure their documents.</p>
+<pre><code>In this case we can find that cardinality of key paths are very high. Thus,
+we would be unable to collect suitable statistics for each key path.
+However, we could consider such situation as user mistake. Then we should
+advise users to restructure their documents.
 
-<p>  There are still kind of documents, which don&rsquo;t fit this model not because of
-  user mistake but because of their nature. Imagine json formatted query plans
-  stored in the table. Plans could have unlimited levels of nesting and
-  correspondingly cardinality of key paths could be very high.</p></li>
-<li><p>Some objects stored inside jsonb documents could require special statistics.
+There are still kind of documents, which don't fit this model not because of
+user mistake but because of their nature. Imagine json formatted query plans
+stored in the table. Plans could have unlimited levels of nesting and
+correspondingly cardinality of key paths could be very high.
+</code></pre>
+
+<ul>
+  <li>
+    <p>Some objects stored inside jsonb documents could require special statistics.
 For instance, point coordinates could be represented in json as
 <code>{"x": 11.3, "y": 27.0}</code>. But statistics we will need in this case is not
 separate statistics for <code>x</code> and <code>y</code>. We would need something special for
-geometrical objects like 2D-histograms.</p></li>
-<li><p>Another problem is fitting this model into PostgreSQL system catalog.
+geometrical objects like 2D-histograms.</p>
+  </li>
+  <li>
+    <p>Another problem is fitting this model into PostgreSQL system catalog.
 <code>pg_statistic</code> assumes that statistics of attribute is represented by few
 arrays. However, in this model we have to store few arrays per each key
 path. For sure, we do a trick by storing array of jsonb or something like
 this, but that would be a kluge. It would be nice to store each key path in
 the separate row of <code>pg_statistic</code>. This would require significant changes
-in statistics handling though.</p></li>
+in statistics handling though.</p>
+  </li>
 </ul>
 
-
-<h2>Conclusion</h2>
+<h2 id="conclusion">Conclusion</h2>
 
 <p>This was just my current thoughts about jsonb statistics. Probably, someone come
-with much better ideas. But I&rsquo;m not sure we can find ideal solution, which
+with much better ideas. But I’m not sure we can find ideal solution, which
 would fit everyone needs. We can see that current developments in
 multivariate  statistics use pluggable approach: user can turn on specific
 method on specific set of column. We could end up with something similar for
@@ -608,6 +608,8 @@ specific needs.</p>
   </div>
   
   <div id="recent_posts" class="list-group">
+    
+    <a class="list-group-item " href="/blog/2016/03/14/pg_pathman-condition-processing/">How Does Pg_pathman Handle Filter Conditions?</a>
     
     <a class="list-group-item " href="/blog/2016/03/04/pg_pathman-beta-release/">Pg_pathman Beta Release</a>
     
