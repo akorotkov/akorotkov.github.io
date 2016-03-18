@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Pg_pathman Beta Release - Alexander Korotkov's blog</title>
+  <title>Pg_pathman UPDATE and DELETE Support and Benchmark - Alexander Korotkov's blog</title>
   <meta name="author" content="Alexander Korotkov">
 
   
@@ -14,15 +14,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/">
+  <link rel="canonical" href="http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/">
   <link href="/favicon.png" type="image/png" rel="icon">
   <link href="/atom.xml" rel="alternate" title="Alexander Korotkov's blog" type="application/atom+xml">
 
   <!-- http://opengraphprotocol.org/ -->
   <meta name="twitter:card" content="summary_large_image">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/">
-  <meta property="og:title" content="Pg_pathman Beta Release - Alexander Korotkov's blog">
+  <meta property="og:url" content="http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/">
+  <meta property="og:title" content="Pg_pathman UPDATE and DELETE Support and Benchmark - Alexander Korotkov's blog">
   
 
   <script src="/javascripts/libs/jquery/jquery-2.1.3.min.js"></script>
@@ -113,67 +113,125 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-04T17:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri  4 Mar 2016,  5:10 PM</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-18T12:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri 18 Mar 2016, 12:20 PM</time>
         
       </p>
     
     
     <h1 class="entry-title" itemprop="name headline">
-        Pg_pathman Beta Release
+        Pg_pathman UPDATE and DELETE Support and Benchmark
         
     </h1>
     
   </header>
 
 
-<div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border" src="/images/partitiontable.jpg" /></p>
+<div class="entry-content clearfix" itemprop="articleBody description"><p>Recently <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> receives
+support of UPDATE and DELETE queries.  Because of some specialties of PostgreSQL
+query planner hooks, UPDATE and DELETE planning is accelerated only when only
+one partition is touched by query.  Other way, regular slow inheritance query 
+planning is used.  However, case when UPDATE and DELETE touches only one
+partition seems to be most common and most needing optimization.</p>
 
-<p>Partitioning in PostgreSQL is traditionally implemented using <a href="http://www.postgresql.org/docs/9.5/static/ddl-partitioning.html">table
-inheritance</a>.
-Table inheritance allow planner to include into plan only those child tables
-(partitions) which are compatible with query.  Simultaneously a lot of work on
-partitions management remains on users: create inherited tables, writing trigger
-which selects appropriate partition for row inserting etc.  In order to automate
-this work pg_partman extension was written.  Also, there is upcoming work on
-<a href="http://www.postgresql.org/message-
-id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a> by Amit Langote for PostgreSQL core.</p>
-
-<p>In Postgres Professional we notice performance problem of inheritance based
-partitioning.  The problem is that planner selects children tables compatible
-with query by linear scan.  Thus, for query which selects just one row from one
-partition it would be much slower to plan than to execute.  This fact
-discourages many users and this is why we’re working on new PostgreSQL
-extension: <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.</p>
-
-<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> caches partitions
-meta-information and uses set_rel_pathlist hook in order to replace mechanism of
-child tables selection by its own mechanism.  Thanks to this binary search
-algorithm over sorted array is used for range partitioning and hash table
-lookup for hash partitioning.  Therefore, time spent to partition selection
-appears to be negligible in comparison with forming of result plan nodes.  See
-<a href="http://www.postgrespro.com/blog/pgsql/pg_pathman">postgrespro blog post</a> for
-performance benchmarks.</p>
-
-<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> now in beta-release
-status and we encourage all interested users to try it and give us a feedback.
-pg_pathman is compatible with PostgreSQL 9.5 and distributed under PostgreSQL
-license.  In the future we’re planning to enhance functionality of pg_pathman
-by following features.</p>
+<p>Also, I’d like to share some benchmark. This benchmark consists of operations
+on journal table with about 1 M records for year partitioned by day.  For sure,
+this is kind of toy example, because nobody will split so small amount of data
+into so many partitions.  But it is still good to see partitioning overhead.
+Performance of following operations was compared:</p>
 
 <ul>
-  <li>Execute time selection of partitions using custom nodes (useful for nested
-loops and prepared statements);</li>
-  <li>Optimization of ordering output from partitioned tables (useful for merge
-join and order by);</li>
-  <li>Optimization of hash join when both tables are partitioned by join key;</li>
-  <li>LIST-partitioning;</li>
-  <li>HASH-partitioning by attributes of any hashable type.</li>
+  <li>Select single row by its timestamp,</li>
+  <li>Select data for whole day (whole one partition),</li>
+  <li>Insert one row with random timestamp,</li>
+  <li>Update one row with random timestamp.</li>
 </ul>
 
-<p>Despite we have pg_pathman useful here and now, we want this functionality to
-eventually become part of PostgreSQL core.  This is why we are going to join
-work on declarative partitioning by Amit Langote which have excellent DDL
-infrastructure and fulfill it with effective internal algorithms.</p>
+<p>The following partitioning methods were compared:</p>
+
+<ul>
+  <li>Single table, no partitioning,</li>
+  <li>pg_partman extension,</li>
+  <li>pg_pathman extension.</li>
+</ul>
+
+<p>Benchmarks were done on 2 x Intel Xeon CPU X5675 @ 3.07GHz, 24 GB of memory
+server with fsync = off in 10 threads. See the results below.</p>
+
+<p><img class="no-border" src="/images/pg_pathman_benchmarks.png" /></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Test name</th>
+      <th style="text-align: right">single table, TPS</th>
+      <th style="text-align: right">pg_partman, TPS</th>
+      <th style="text-align: right">pg_pathman, TPS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Select one row</td>
+      <td style="text-align: right">47973</td>
+      <td style="text-align: right">1084</td>
+      <td style="text-align: right">41775</td>
+    </tr>
+    <tr>
+      <td>Select whole one partition</td>
+      <td style="text-align: right">2302</td>
+      <td style="text-align: right">704</td>
+      <td style="text-align: right">2556</td>
+    </tr>
+    <tr>
+      <td>Insert one row</td>
+      <td style="text-align: right">34401</td>
+      <td style="text-align: right">7969</td>
+      <td style="text-align: right">25859</td>
+    </tr>
+    <tr>
+      <td>Update one row</td>
+      <td style="text-align: right">32769</td>
+      <td style="text-align: right">202</td>
+      <td style="text-align: right">29289</td>
+    </tr>
+  </tbody>
+</table>
+
+<!--more-->
+
+<p>I can make following highlights for these results.</p>
+
+<ul>
+  <li>pg_pathman is dramatically faster than pg_partman, because pg_pathman uses
+planner hooks for faster query planning while pg_partman uses built-in
+inheritance mechanism.</li>
+  <li>When selecting or updating a single row, pg_pathman is almost as fast as plain
+table.  The difference for insertion of single row is slightly bigger because
+trigger is used for that.</li>
+  <li>The difference between pg_partman and pg_pathman when selecting the whole
+partition is not as dramatic as when selecting the one row.  This is why
+planning time becomes less substantial in comparison with execution time.</li>
+  <li>Inserting random rows with pg_pathman is still much faster than with
+pg_partman while both of them use trigger on parent relation.  However,
+pg_pathman uses fast C-function for partition selection.</li>
+  <li>Selecting the whole partition when table is partitioned by pg_pathman is
+slightly faster than selecting same rows from plain table.  This is because
+sequential scan was used for selecting whole partition while index scan
+was used for selecting part of plain table.  When among of data is big and
+doesn’t fit cache this difference is expected to be much more.</li>
+</ul>
+
+<p>See <a href="https://gist.github.com/akorotkov/0d558a6e1b5ea176813a">this gist</a> for
+SQL-scripts used for benchmarking.</p>
+
+<ul>
+  <li>create_*.sql creates journal table using various partitioning methods.</li>
+  <li>select_one.sql, select_day.sql, insert.sql and update.sql are pg_bench
+scripts.</li>
+</ul>
+
+<p>P.S. This post is not a criticism of pg_partman.  It was developed long time
+before extendability mechanisms which pg_pathman use were created.  And it
+is great a extension which have served many years.</p>
 </div>
 
 
@@ -197,13 +255,13 @@ infrastructure and fulfill it with effective internal algorithms.</p>
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-04T17:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri  4 Mar 2016,  5:10 PM</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-18T12:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri 18 Mar 2016, 12:20 PM</time>
           
 
 <span class="glyphicon glyphicon-tags"></span>&nbsp;
 <span class="categories">
   
-    <a class='category' href='/blog/categories/partitioning/'>partitioning</a>, <a class='category' href='/blog/categories/pg/'>pg</a>, <a class='category' href='/blog/categories/pg-pathman/'>pg_pathman</a>
+    <a class='category' href='/blog/categories/benchmark/'>benchmark</a>, <a class='category' href='/blog/categories/delete/'>delete</a>, <a class='category' href='/blog/categories/partitioning/'>partitioning</a>, <a class='category' href='/blog/categories/pg/'>pg</a>, <a class='category' href='/blog/categories/pg-pathman/'>pg_pathman</a>, <a class='category' href='/blog/categories/update/'>update</a>
   
 </span>
 
@@ -222,10 +280,8 @@ infrastructure and fulfill it with effective internal algorithms.</p>
         
           <ul class="meta text-muted pager">
             
-            <li class="previous"><a href="/blog/2015/09/07/jsonb_statistics/" title="Previous Post: Thoughts about jsonb statistics">&laquo; Thoughts about jsonb statistics</a></li>
+            <li class="previous"><a href="/blog/2016/03/14/pg_pathman-condition-processing/" title="Previous Post: How does pg_pathman handle filter conditions?">&laquo; How does pg_pathman handle filter conditions?</a></li>
             
-            
-            <li class="next"><a href="/blog/2016/03/14/pg_pathman-condition-processing/" title="Next Post: How does pg_pathman handle filter conditions?">How does pg_pathman handle filter conditions? &raquo;</a></li>
             
           </ul>
         
@@ -250,11 +306,11 @@ infrastructure and fulfill it with effective internal algorithms.</p>
   
   <div id="recent_posts" class="list-group">
     
-    <a class="list-group-item " href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/">Pg_pathman UPDATE and DELETE Support and Benchmark</a>
+    <a class="list-group-item active" href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/">Pg_pathman UPDATE and DELETE Support and Benchmark</a>
     
     <a class="list-group-item " href="/blog/2016/03/14/pg_pathman-condition-processing/">How Does Pg_pathman Handle Filter Conditions?</a>
     
-    <a class="list-group-item active" href="/blog/2016/03/04/pg_pathman-beta-release/">Pg_pathman Beta Release</a>
+    <a class="list-group-item " href="/blog/2016/03/04/pg_pathman-beta-release/">Pg_pathman Beta Release</a>
     
     <a class="list-group-item " href="/blog/2015/09/07/jsonb_statistics/">Thoughts About Jsonb Statistics</a>
     
@@ -294,8 +350,8 @@ infrastructure and fulfill it with effective internal algorithms.</p>
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/';
-        var disqus_url = 'http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/';
+        var disqus_identifier = 'http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/';
+        var disqus_url = 'http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/';
         var disqus_script = 'embed.js';
       
     (function () {

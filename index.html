@@ -117,6 +117,116 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-18T12:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri 18 Mar 2016, 12:20 PM</time>
+        
+      </p>
+    
+    
+      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/" itemprop="url">Pg_pathman UPDATE and DELETE Support and Benchmark</a></h2>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Recently <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> receives
+support of UPDATE and DELETE queries.  Because of some specialties of PostgreSQL
+query planner hooks, UPDATE and DELETE planning is accelerated only when only
+one partition is touched by query.  Other way, regular slow inheritance query 
+planning is used.  However, case when UPDATE and DELETE touches only one
+partition seems to be most common and most needing optimization.</p>
+
+<p>Also, I’d like to share some benchmark. This benchmark consists of operations
+on journal table with about 1 M records for year partitioned by day.  For sure,
+this is kind of toy example, because nobody will split so small amount of data
+into so many partitions.  But it is still good to see partitioning overhead.
+Performance of following operations was compared:</p>
+
+<ul>
+  <li>Select single row by its timestamp,</li>
+  <li>Select data for whole day (whole one partition),</li>
+  <li>Insert one row with random timestamp,</li>
+  <li>Update one row with random timestamp.</li>
+</ul>
+
+<p>The following partitioning methods were compared:</p>
+
+<ul>
+  <li>Single table, no partitioning,</li>
+  <li>pg_partman extension,</li>
+  <li>pg_pathman extension.</li>
+</ul>
+
+<p>Benchmarks were done on 2 x Intel Xeon CPU X5675 @ 3.07GHz, 24 GB of memory
+server with fsync = off in 10 threads. See the results below.</p>
+
+<p><img class="no-border" src="/images/pg_pathman_benchmarks.png" /></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Test name</th>
+      <th style="text-align: right">single table, TPS</th>
+      <th style="text-align: right">pg_partman, TPS</th>
+      <th style="text-align: right">pg_pathman, TPS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Select one row</td>
+      <td style="text-align: right">47973</td>
+      <td style="text-align: right">1084</td>
+      <td style="text-align: right">41775</td>
+    </tr>
+    <tr>
+      <td>Select whole one partition</td>
+      <td style="text-align: right">2302</td>
+      <td style="text-align: right">704</td>
+      <td style="text-align: right">2556</td>
+    </tr>
+    <tr>
+      <td>Insert one row</td>
+      <td style="text-align: right">34401</td>
+      <td style="text-align: right">7969</td>
+      <td style="text-align: right">25859</td>
+    </tr>
+    <tr>
+      <td>Update one row</td>
+      <td style="text-align: right">32769</td>
+      <td style="text-align: right">202</td>
+      <td style="text-align: right">29289</td>
+    </tr>
+  </tbody>
+</table>
+
+</div>
+  
+  
+    <footer>
+      <a class="read-more btn btn-default" href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/">Read on &rarr;</a>
+    </footer>
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-14T11:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon 14 Mar 2016, 11:10 AM</time>
         
       </p>
@@ -129,11 +239,19 @@
 
   <div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border right" src="/images/filter_data_icon.jpg" /></p>
 
-<p>In my <a href="/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve introduced <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> as an extension which accelerate query planning over partitioned tables.  In this post I would like to covert another aspect of pg_pathman: it not only produce  plans faster, but also produce better plans.  Thanks to it query execution with pg_pathman becomes much faster in some cases.</p>
+<p>In my <a href="/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve
+introduced <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> as an
+extension which accelerate query planning over partitioned tables.  In this post
+I would like to covert another aspect of pg_pathman: it not only produce  plans
+faster, but also produce better plans.  Thanks to it query execution with
+pg_pathman becomes much faster in some cases.</p>
 
-<p>When you search partitioned table with some filter conditions, pg_pathman adopts this filter to each individual partition.  Therefore, each partition receives the only filter conditions which are useful to check against it.</p>
+<p>When you search partitioned table with some filter conditions, pg_pathman adopts
+this filter to each individual partition.  Therefore, each partition receives
+the only filter conditions which are useful to check against it.</p>
 
-<p>Let me illustrate this on the example.  At first, let’s see what’s happening with filter conditions while dealing with PostgreSQL inheritance mechanism.</p>
+<p>Let me illustrate this on the example.  At first, let’s see what’s happening
+with filter conditions while dealing with PostgreSQL inheritance mechanism.</p>
 
 </div>
   
@@ -177,23 +295,52 @@
 
   <div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border" src="/images/partitiontable.jpg" /></p>
 
-<p>Partitioning in PostgreSQL is traditionally implemented using <a href="http://www.postgresql.org/docs/9.5/static/ddl-partitioning.html">table inheritance</a>. Table inheritance allow planner to include into plan only those child tables (partitions) which are compatible with query.  Simultaneously a lot of work on partitions management remains on users: create inherited tables, writing trigger which selects appropriate partition for row inserting etc.  In order to automate this work pg_partman extension was written.  Also, there is upcoming work on <a href="http://www.postgresql.org/message-id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a> by Amit Langote for PostgreSQL core.</p>
+<p>Partitioning in PostgreSQL is traditionally implemented using <a href="http://www.postgresql.org/docs/9.5/static/ddl-partitioning.html">table
+inheritance</a>.
+Table inheritance allow planner to include into plan only those child tables
+(partitions) which are compatible with query.  Simultaneously a lot of work on
+partitions management remains on users: create inherited tables, writing trigger
+which selects appropriate partition for row inserting etc.  In order to automate
+this work pg_partman extension was written.  Also, there is upcoming work on
+<a href="http://www.postgresql.org/message-
+id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a> by Amit Langote for PostgreSQL core.</p>
 
-<p>In Postgres Professional we notice performance problem of inheritance based partitioning.  The problem is that planner selects children tables compatible with query by linear scan.  Thus, for query which selects just one row from one partition it would be much slower to plan than to execute.  This fact discourages many users and this is why we’re working on new PostgreSQL extension: <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.</p>
+<p>In Postgres Professional we notice performance problem of inheritance based
+partitioning.  The problem is that planner selects children tables compatible
+with query by linear scan.  Thus, for query which selects just one row from one
+partition it would be much slower to plan than to execute.  This fact
+discourages many users and this is why we’re working on new PostgreSQL
+extension: <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.</p>
 
-<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> caches partitions meta-information and uses set_rel_pathlist hook in order to replace mechanism of child tables selection by its own mechanism.  Thanks to this binary search algorithm over sorted array is used for range partitioning and hash table lookup for hash partitioning.  Therefore, time spent to partition selection appears to be negligible in comparison with forming of result plan nodes.  See <a href="http://www.postgrespro.com/blog/pgsql/pg_pathman">postgrespro blog post</a> for performance benchmarks.</p>
+<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> caches partitions
+meta-information and uses set_rel_pathlist hook in order to replace mechanism of
+child tables selection by its own mechanism.  Thanks to this binary search
+algorithm over sorted array is used for range partitioning and hash table
+lookup for hash partitioning.  Therefore, time spent to partition selection
+appears to be negligible in comparison with forming of result plan nodes.  See
+<a href="http://www.postgrespro.com/blog/pgsql/pg_pathman">postgrespro blog post</a> for
+performance benchmarks.</p>
 
-<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> now in beta-release status and we encourage all interested users to try it and give us a feedback.  pg_pathman is compatible with PostgreSQL 9.5 and distributed under PostgreSQL license.  In the future we’re planning to enhance functionality of pg_pathman by following features.</p>
+<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> now in beta-release
+status and we encourage all interested users to try it and give us a feedback.
+pg_pathman is compatible with PostgreSQL 9.5 and distributed under PostgreSQL
+license.  In the future we’re planning to enhance functionality of pg_pathman
+by following features.</p>
 
 <ul>
-  <li>Execute time selection of partitions using custom nodes (useful for nested loops and prepared statements);</li>
-  <li>Optimization of ordering output from partitioned tables (useful for merge join and order by);</li>
+  <li>Execute time selection of partitions using custom nodes (useful for nested
+loops and prepared statements);</li>
+  <li>Optimization of ordering output from partitioned tables (useful for merge
+join and order by);</li>
   <li>Optimization of hash join when both tables are partitioned by join key;</li>
   <li>LIST-partitioning;</li>
   <li>HASH-partitioning by attributes of any hashable type.</li>
 </ul>
 
-<p>Despite we have pg_pathman useful here and now, we want this functionality to eventually become part of PostgreSQL core.  This is why we are going to join work on declarative partitioning by Amit Langote which have excellent DDL infrastructure and fulfill it with effective internal algorithms.</p>
+<p>Despite we have pg_pathman useful here and now, we want this functionality to
+eventually become part of PostgreSQL core.  This is why we are going to join
+work on declarative partitioning by Amit Langote which have excellent DDL
+infrastructure and fulfill it with effective internal algorithms.</p>
 </div>
   
   
@@ -345,6 +492,8 @@ typing <code>:gdb</code>.</p>
   </div>
   
   <div id="recent_posts" class="list-group">
+    
+    <a class="list-group-item " href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/">Pg_pathman UPDATE and DELETE Support and Benchmark</a>
     
     <a class="list-group-item " href="/blog/2016/03/14/pg_pathman-condition-processing/">How Does Pg_pathman Handle Filter Conditions?</a>
     

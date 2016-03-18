@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/</loc>
+    <lastmod>2016-03-18T12:20:00+03:00</lastmod>
+  </url>
+  <url>
     <loc>http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/</loc>
     <lastmod>2016-03-14T11:10:00+03:00</lastmod>
   </url>
@@ -51,5 +55,14 @@
   </url>
   <url>
     <loc>http://akorotkov.github.io/blog/categories/filter/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/update/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/delete/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/benchmark/</loc>
   </url>
 </urlset>

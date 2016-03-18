@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Pg_pathman | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/pg-pathman/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-03-14T11:09:30+03:00</updated>
+  <updated>2016-03-18T12:29:56+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -14,17 +14,139 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Pg_pathman UPDATE and DELETE Support and Benchmark]]></title>
+    <link href="http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/"/>
+    <updated>2016-03-18T12:20:00+03:00</updated>
+    <id>http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark</id>
+    <content type="html"><![CDATA[<p>Recently <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> receives
+support of UPDATE and DELETE queries.  Because of some specialties of PostgreSQL
+query planner hooks, UPDATE and DELETE planning is accelerated only when only
+one partition is touched by query.  Other way, regular slow inheritance query 
+planning is used.  However, case when UPDATE and DELETE touches only one
+partition seems to be most common and most needing optimization.</p>
+
+<p>Also, I’d like to share some benchmark. This benchmark consists of operations
+on journal table with about 1 M records for year partitioned by day.  For sure,
+this is kind of toy example, because nobody will split so small amount of data
+into so many partitions.  But it is still good to see partitioning overhead.
+Performance of following operations was compared:</p>
+
+<ul>
+  <li>Select single row by its timestamp,</li>
+  <li>Select data for whole day (whole one partition),</li>
+  <li>Insert one row with random timestamp,</li>
+  <li>Update one row with random timestamp.</li>
+</ul>
+
+<p>The following partitioning methods were compared:</p>
+
+<ul>
+  <li>Single table, no partitioning,</li>
+  <li>pg_partman extension,</li>
+  <li>pg_pathman extension.</li>
+</ul>
+
+<p>Benchmarks were done on 2 x Intel Xeon CPU X5675 @ 3.07GHz, 24 GB of memory
+server with fsync = off in 10 threads. See the results below.</p>
+
+<p><img class="no-border" src="/images/pg_pathman_benchmarks.png"></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Test name</th>
+      <th style="text-align: right">single table, TPS</th>
+      <th style="text-align: right">pg_partman, TPS</th>
+      <th style="text-align: right">pg_pathman, TPS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Select one row</td>
+      <td style="text-align: right">47973</td>
+      <td style="text-align: right">1084</td>
+      <td style="text-align: right">41775</td>
+    </tr>
+    <tr>
+      <td>Select whole one partition</td>
+      <td style="text-align: right">2302</td>
+      <td style="text-align: right">704</td>
+      <td style="text-align: right">2556</td>
+    </tr>
+    <tr>
+      <td>Insert one row</td>
+      <td style="text-align: right">34401</td>
+      <td style="text-align: right">7969</td>
+      <td style="text-align: right">25859</td>
+    </tr>
+    <tr>
+      <td>Update one row</td>
+      <td style="text-align: right">32769</td>
+      <td style="text-align: right">202</td>
+      <td style="text-align: right">29289</td>
+    </tr>
+  </tbody>
+</table>
+
+<!--more-->
+
+<p>I can make following highlights for these results.</p>
+
+<ul>
+  <li>pg_pathman is dramatically faster than pg_partman, because pg_pathman uses
+planner hooks for faster query planning while pg_partman uses built-in
+inheritance mechanism.</li>
+  <li>When selecting or updating a single row, pg_pathman is almost as fast as plain
+table.  The difference for insertion of single row is slightly bigger because
+trigger is used for that.</li>
+  <li>The difference between pg_partman and pg_pathman when selecting the whole
+partition is not as dramatic as when selecting the one row.  This is why
+planning time becomes less substantial in comparison with execution time.</li>
+  <li>Inserting random rows with pg_pathman is still much faster than with
+pg_partman while both of them use trigger on parent relation.  However,
+pg_pathman uses fast C-function for partition selection.</li>
+  <li>Selecting the whole partition when table is partitioned by pg_pathman is
+slightly faster than selecting same rows from plain table.  This is because
+sequential scan was used for selecting whole partition while index scan
+was used for selecting part of plain table.  When among of data is big and
+doesn’t fit cache this difference is expected to be much more.</li>
+</ul>
+
+<p>See <a href="https://gist.github.com/akorotkov/0d558a6e1b5ea176813a">this gist</a> for
+SQL-scripts used for benchmarking.</p>
+
+<ul>
+  <li>create_*.sql creates journal table using various partitioning methods.</li>
+  <li>select_one.sql, select_day.sql, insert.sql and update.sql are pg_bench
+scripts.</li>
+</ul>
+
+<p>P.S. This post is not a criticism of pg_partman.  It was developed long time
+before extendability mechanisms which pg_pathman use were created.  And it
+is great a extension which have served many years.</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[How Does Pg_pathman Handle Filter Conditions?]]></title>
     <link href="http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/"/>
     <updated>2016-03-14T11:10:00+03:00</updated>
     <id>http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing</id>
     <content type="html"><![CDATA[<p><img class="no-border right" src="/images/filter_data_icon.jpg"></p>
 
-<p>In my <a href="/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve introduced <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> as an extension which accelerate query planning over partitioned tables.  In this post I would like to covert another aspect of pg_pathman: it not only produce  plans faster, but also produce better plans.  Thanks to it query execution with pg_pathman becomes much faster in some cases.</p>
+<p>In my <a href="/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve
+introduced <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> as an
+extension which accelerate query planning over partitioned tables.  In this post
+I would like to covert another aspect of pg_pathman: it not only produce  plans
+faster, but also produce better plans.  Thanks to it query execution with
+pg_pathman becomes much faster in some cases.</p>
 
-<p>When you search partitioned table with some filter conditions, pg_pathman adopts this filter to each individual partition.  Therefore, each partition receives the only filter conditions which are useful to check against it.</p>
+<p>When you search partitioned table with some filter conditions, pg_pathman adopts
+this filter to each individual partition.  Therefore, each partition receives
+the only filter conditions which are useful to check against it.</p>
 
-<p>Let me illustrate this on the example.  At first, let’s see what’s happening with filter conditions while dealing with PostgreSQL inheritance mechanism.</p>
+<p>Let me illustrate this on the example.  At first, let’s see what’s happening
+with filter conditions while dealing with PostgreSQL inheritance mechanism.</p>
 
 <!--more-->
 
@@ -108,9 +230,15 @@
 </span><span class='line'><span class="p">(</span><span class="mi">16</span> <span class="k">rows</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure></p>
 
-<p>We can see that filter condition was passed to each partition as is.  But actually it could be simplified a lot.  For instance, table test_2 could be scan without filter condition at all because all its rows are matching.  Filter condition to test_3 could be simplified to <code>ts &lt; '2015-03-15'</code>, therefore BitmapOr is not necessary.</p>
+<p>We can see that filter condition was passed to each partition as is.  But
+actually it could be simplified a lot.  For instance, table test_2 could be scan
+without filter condition at all because all its rows are matching.  Filter
+condition to test_3 could be simplified to <code>ts &lt; '2015-03-15'</code>, therefore
+BitmapOr is not necessary.</p>
 
-<p>Let’s try the same example with <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.  Firstly create test table and its partitions.</p>
+<p>Let’s try the same example with
+<a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.  Firstly create test
+table and its partitions.</p>
 
 <p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -120,7 +248,8 @@
 </span><span class='line'><span class="k">SELECT</span> <span class="n">create_range_partitions</span><span class="p">(</span><span class="err">‘</span><span class="n">test</span><span class="err">’</span><span class="p">,</span> <span class="err">‘</span><span class="n">ts</span><span class="err">’</span><span class="p">,</span> <span class="err">‘</span><span class="mi">2015</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">01</span><span class="err">’</span><span class="p">::</span><span class="k">timestamp</span><span class="p">,</span> <span class="err">‘</span><span class="mi">1</span> <span class="k">month</span><span class="err">’</span><span class="p">::</span><span class="nb">interval</span><span class="p">,</span> <span class="mi">6</span><span class="p">);</span>
 </span></code></pre></td></tr></table></div></figure></p>
 
-<p>Then insert test data into table.  pg_pathman automatically creates trigger which distribute data between partitions. Just like pg_partman does.</p>
+<p>Then insert test data into table.  pg_pathman automatically creates trigger
+which distribute data between partitions. Just like pg_partman does.</p>
 
 <p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">test</span> <span class="p">(</span><span class="k">SELECT</span> <span class="err">‘</span><span class="mi">2015</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">01</span><span class="err">’</span><span class="p">::</span><span class="k">timestamp</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="nb">interval</span> <span class="err">‘</span><span class="mi">1</span> <span class="k">minute</span><span class="err">’</span><span class="p">,</span> <span class="n">md5</span><span class="p">(</span><span class="n">i</span><span class="p">::</span><span class="nb">text</span><span class="p">)</span> <span class="k">FROM</span> <span class="n">generate_series</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1440</span> <span class="o">*</span> <span class="mi">181</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="n">i</span><span class="p">);</span>
@@ -152,58 +281,98 @@
 </span><span class='line'><span class="p">(</span><span class="mi">7</span> <span class="k">rows</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure></p>
 
-<p>We can see that pg_pathman selects the same partitions, but query plan becomes way simpler.  Now, test_2 is scanned without useless filter condition.  test_3 is scanned using just <code>ts &lt; '2015-03-15'</code> filter condition.  Thanks to it, plain Index Scan is used instead of BitmapOr.  And similar advances was applied to rest of partitions.</p>
+<p>We can see that pg_pathman selects the same partitions, but query plan becomes
+way simpler.  Now, test_2 is scanned without useless filter condition.  test_3
+is scanned using just <code>ts &lt; '2015-03-15'</code> filter condition.  Thanks to it, plain
+Index Scan is used instead of BitmapOr.  And similar advances was applied to
+rest of partitions.</p>
 
-<p>How was this simplification possible?  The common fear here is that such simplification could be computational expensive in general case.  But since pg_pathman is intended to decrease query planning time, it’s very important to keep all transformations cheap and simple.  And this cheap and simple algorithm of transformation really exists.</p>
+<p>How was this simplification possible?  The common fear here is that such
+simplification could be computational expensive in general case.  But since
+pg_pathman is intended to decrease query planning time, it’s very important to
+keep all transformations cheap and simple.  And this cheap and simple algorithm
+of transformation really exists.</p>
 
-<p>Let’s see how it works on simple example. The filter condition <code>(ts &gt;= '2015-02-01' AND ts &lt; '2015-03-15') OR (ts &gt;= '2015-05-15' AND ts &lt; '2015-07-01')</code> have following tree representation.</p>
+<p>Let’s see how it works on simple example. The filter condition <code>(ts &gt;=
+'2015-02-01' AND ts &lt; '2015-03-15') OR (ts &gt;= '2015-05-15' AND ts &lt;
+'2015-07-01')</code> have following tree representation.</p>
 
 <p><img class="no-border center" src="/images/pg_pathman_condition_1.png"></p>
 
-<p>Leaf nodes of tree are simple conditions.  Non-leaf nodes are logical operators which forms complex conditions.  For particular partition each filter condition (either simple or complex) could be treated into one of three classes.</p>
+<p>Leaf nodes of tree are simple conditions.  Non-leaf nodes are logical operators
+which forms complex conditions.  For particular partition each filter condition
+(either simple or complex) could be treated into one of three classes.</p>
 
 <ol>
-  <li>Filter condition is always true for rows of this partition (t).  For instance, condition <code>ts &gt;= '2015-04-15'</code> is always true for partition <code>ts &gt;= 2015-05-01 AND ts &lt; 2015-06-01</code>.</li>
-  <li>Filter condition could be either true or false for rows of this partition (m). For instance, condition <code>ts &gt;= '2015-03-15'</code> could be either true or false for partition <code>ts &gt;= 2015-03-01 AND ts &lt; 2015-03-01</code>.</li>
-  <li>Filter condition is always false for rows of this partition (f).  For instance, condition <code>ts &lt;= '2015-02-01'</code> is always false for partition <code>ts &gt;= 2015-04-01 AND ts &lt; 2015-04-01</code>.</li>
+  <li>
+    <p>Filter condition is always true for rows of this partition (t).  For
+instance, condition <code>ts &gt;= '2015-04-15'</code> is always true for partition <code>ts &gt;=
+2015-05-01 AND ts &lt; 2015-06-01</code>.</p>
+  </li>
+  <li>
+    <p>Filter condition could be either true or false for rows of this partition
+(m). For instance, condition <code>ts &gt;= '2015-03-15'</code> could be either true or
+false for partition <code>ts &gt;= 2015-03-01 AND ts &lt; 2015-03-01</code>.</p>
+  </li>
+  <li>
+    <p>Filter condition is always false for rows of this partition (f).  For
+instance, condition <code>ts &lt;= '2015-02-01'</code> is always false for partition <code>ts &gt;=
+2015-04-01 AND ts &lt; 2015-04-01</code>.</p>
+  </li>
 </ol>
 
-<p>We can mark each tree node with vector of classes which corresponding condition is treated against each partition.  These vectors could be filled upwards: for leaf nodes first, and then for non-leaf nodes using tri-state logic.</p>
+<p>We can mark each tree node with vector of classes which corresponding condition
+is treated against each partition.  These vectors could be filled upwards: for
+leaf nodes first, and then for non-leaf nodes using tri-state logic.</p>
 
 <p><img class="no-border center" src="/images/pg_pathman_condition_2.png"></p>
 
-<p>It’s evident that only conditions which could be either true or false (m) are useful for filtering.  Conditions which are always true or always false shouldn’t be presented in the partitions filter.  Using produced three we can now produce filter conditions for each partition.</p>
+<p>It’s evident that only conditions which could be either true or false (m) are
+useful for filtering.  Conditions which are always true or always false
+shouldn’t be presented in the partitions filter.  Using produced three we can
+now produce filter conditions for each partition.</p>
 
 <ol>
   <li>
-    <p>For <code>ts &gt;= 2015-01-01 AND ts &lt; 2015-02-01</code> partition, whole filter condition is false. So, skip it.</p>
+    <p>For <code>ts &gt;= 2015-01-01 AND ts &lt; 2015-02-01</code> partition, whole filter condition
+is false. So, skip it.</p>
   </li>
   <li>
-    <p>For <code>ts &gt;= 2015-02-01 AND ts &lt; 2015-03-01</code> partition, whole filter condition is true. So, scan it without filter.</p>
+    <p>For <code>ts &gt;= 2015-02-01 AND ts &lt; 2015-03-01</code> partition, whole filter condition
+is true. So, scan it without filter.</p>
   </li>
   <li>
-    <p>For <code>ts &gt;= 2015-03-01 AND ts &lt; 2015-04-01</code> partition, filter condition tree would be reduced into following tree.</p>
+    <p>For <code>ts &gt;= 2015-03-01 AND ts &lt; 2015-04-01</code> partition, filter condition tree
+would be reduced into following tree.</p>
 
     <p><img class="no-border center" src="/images/pg_pathman_condition_3.png"></p>
 
     <p>Therefore, this partition will be scan with <code>ts &lt; '2015-03-15'</code> filter.</p>
   </li>
   <li>
-    <p>For <code>ts &gt;= 2015-04-01 AND ts &lt; 2015-05-01</code> partition, whole filter condition is false. So, skip it.</p>
+    <p>For <code>ts &gt;= 2015-04-01 AND ts &lt; 2015-05-01</code> partition, whole filter condition
+is false. So, skip it.</p>
   </li>
   <li>
-    <p>For <code>ts &gt;= 2015-05-01 AND ts &lt; 2015-06-01</code> partition, filter condition tree would be reduced into following tree.</p>
+    <p>For <code>ts &gt;= 2015-05-01 AND ts &lt; 2015-06-01</code> partition, filter condition tree
+would be reduced into following tree.</p>
 
     <p><img class="no-border center" src="/images/pg_pathman_condition_4.png"></p>
 
     <p>Therefore, this partition will be scan with <code>ts &gt;= '2015-05-15'</code> filter.</p>
   </li>
   <li>
-    <p>For <code>ts &gt;= 2015-06-01 AND ts &lt; 2015-07-01</code> partition, whole filter condition is true. So, scan it without filter.</p>
+    <p>For <code>ts &gt;= 2015-06-01 AND ts &lt; 2015-07-01</code> partition, whole filter condition
+is true. So, scan it without filter.</p>
   </li>
 </ol>
 
-<p>This is how filter conditions processing works in <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.  The explanation could be a bit exhausting for reading, but I hope you feel enlighten by getting how it works.  I remember that pg_pathman is open source extension for PostgreSQL 9.5 in beta-release stage.  I appeal to everyone interested for trying it and sharing a feedback.</p>
+<p>This is how filter conditions processing works in
+<a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.  The explanation could
+be a bit exhausting for reading, but I hope you feel enlighten by getting how it
+works.  I remember that pg_pathman is open source extension for PostgreSQL 9.5
+in beta-release stage.  I appeal to everyone interested for trying it and
+sharing a feedback.</p>
 
 ]]></content>
   </entry>
@@ -215,23 +384,52 @@
     <id>http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release</id>
     <content type="html"><![CDATA[<p><img class="no-border" src="/images/partitiontable.jpg"></p>
 
-<p>Partitioning in PostgreSQL is traditionally implemented using <a href="http://www.postgresql.org/docs/9.5/static/ddl-partitioning.html">table inheritance</a>. Table inheritance allow planner to include into plan only those child tables (partitions) which are compatible with query.  Simultaneously a lot of work on partitions management remains on users: create inherited tables, writing trigger which selects appropriate partition for row inserting etc.  In order to automate this work pg_partman extension was written.  Also, there is upcoming work on <a href="http://www.postgresql.org/message-id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a> by Amit Langote for PostgreSQL core.</p>
+<p>Partitioning in PostgreSQL is traditionally implemented using <a href="http://www.postgresql.org/docs/9.5/static/ddl-partitioning.html">table
+inheritance</a>.
+Table inheritance allow planner to include into plan only those child tables
+(partitions) which are compatible with query.  Simultaneously a lot of work on
+partitions management remains on users: create inherited tables, writing trigger
+which selects appropriate partition for row inserting etc.  In order to automate
+this work pg_partman extension was written.  Also, there is upcoming work on
+<a href="http://www.postgresql.org/message-
+id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a> by Amit Langote for PostgreSQL core.</p>
 
-<p>In Postgres Professional we notice performance problem of inheritance based partitioning.  The problem is that planner selects children tables compatible with query by linear scan.  Thus, for query which selects just one row from one partition it would be much slower to plan than to execute.  This fact discourages many users and this is why we’re working on new PostgreSQL extension: <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.</p>
+<p>In Postgres Professional we notice performance problem of inheritance based
+partitioning.  The problem is that planner selects children tables compatible
+with query by linear scan.  Thus, for query which selects just one row from one
+partition it would be much slower to plan than to execute.  This fact
+discourages many users and this is why we’re working on new PostgreSQL
+extension: <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.</p>
 
-<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> caches partitions meta-information and uses set_rel_pathlist hook in order to replace mechanism of child tables selection by its own mechanism.  Thanks to this binary search algorithm over sorted array is used for range partitioning and hash table lookup for hash partitioning.  Therefore, time spent to partition selection appears to be negligible in comparison with forming of result plan nodes.  See <a href="http://www.postgrespro.com/blog/pgsql/pg_pathman">postgrespro blog post</a> for performance benchmarks.</p>
+<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> caches partitions
+meta-information and uses set_rel_pathlist hook in order to replace mechanism of
+child tables selection by its own mechanism.  Thanks to this binary search
+algorithm over sorted array is used for range partitioning and hash table
+lookup for hash partitioning.  Therefore, time spent to partition selection
+appears to be negligible in comparison with forming of result plan nodes.  See
+<a href="http://www.postgrespro.com/blog/pgsql/pg_pathman">postgrespro blog post</a> for
+performance benchmarks.</p>
 
-<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> now in beta-release status and we encourage all interested users to try it and give us a feedback.  pg_pathman is compatible with PostgreSQL 9.5 and distributed under PostgreSQL license.  In the future we’re planning to enhance functionality of pg_pathman by following features.</p>
+<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> now in beta-release
+status and we encourage all interested users to try it and give us a feedback.
+pg_pathman is compatible with PostgreSQL 9.5 and distributed under PostgreSQL
+license.  In the future we’re planning to enhance functionality of pg_pathman
+by following features.</p>
 
 <ul>
-  <li>Execute time selection of partitions using custom nodes (useful for nested loops and prepared statements);</li>
-  <li>Optimization of ordering output from partitioned tables (useful for merge join and order by);</li>
+  <li>Execute time selection of partitions using custom nodes (useful for nested
+loops and prepared statements);</li>
+  <li>Optimization of ordering output from partitioned tables (useful for merge
+join and order by);</li>
   <li>Optimization of hash join when both tables are partitioned by join key;</li>
   <li>LIST-partitioning;</li>
   <li>HASH-partitioning by attributes of any hashable type.</li>
 </ul>
 
-<p>Despite we have pg_pathman useful here and now, we want this functionality to eventually become part of PostgreSQL core.  This is why we are going to join work on declarative partitioning by Amit Langote which have excellent DDL infrastructure and fulfill it with effective internal algorithms.</p>
+<p>Despite we have pg_pathman useful here and now, we want this functionality to
+eventually become part of PostgreSQL core.  This is why we are going to join
+work on declarative partitioning by Amit Langote which have excellent DDL
+infrastructure and fulfill it with effective internal algorithms.</p>
 ]]></content>
   </entry>
   

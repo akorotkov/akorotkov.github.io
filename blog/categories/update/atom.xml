@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Update | Alexander Korotkov's blog]]></title>
+  <link href="http://akorotkov.github.io/blog/categories/update/atom.xml" rel="self"/>
+  <link href="http://akorotkov.github.io/"/>
+  <updated>2016-03-18T12:29:56+03:00</updated>
+  <id>http://akorotkov.github.io/</id>
+  <author>
+    <name><![CDATA[Alexander Korotkov]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Pg_pathman UPDATE and DELETE Support and Benchmark]]></title>
+    <link href="http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/"/>
+    <updated>2016-03-18T12:20:00+03:00</updated>
+    <id>http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark</id>
+    <content type="html"><![CDATA[<p>Recently <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> receives
+support of UPDATE and DELETE queries.  Because of some specialties of PostgreSQL
+query planner hooks, UPDATE and DELETE planning is accelerated only when only
+one partition is touched by query.  Other way, regular slow inheritance query 
+planning is used.  However, case when UPDATE and DELETE touches only one
+partition seems to be most common and most needing optimization.</p>
+
+<p>Also, I’d like to share some benchmark. This benchmark consists of operations
+on journal table with about 1 M records for year partitioned by day.  For sure,
+this is kind of toy example, because nobody will split so small amount of data
+into so many partitions.  But it is still good to see partitioning overhead.
+Performance of following operations was compared:</p>
+
+<ul>
+  <li>Select single row by its timestamp,</li>
+  <li>Select data for whole day (whole one partition),</li>
+  <li>Insert one row with random timestamp,</li>
+  <li>Update one row with random timestamp.</li>
+</ul>
+
+<p>The following partitioning methods were compared:</p>
+
+<ul>
+  <li>Single table, no partitioning,</li>
+  <li>pg_partman extension,</li>
+  <li>pg_pathman extension.</li>
+</ul>
+
+<p>Benchmarks were done on 2 x Intel Xeon CPU X5675 @ 3.07GHz, 24 GB of memory
+server with fsync = off in 10 threads. See the results below.</p>
+
+<p><img class="no-border" src="/images/pg_pathman_benchmarks.png"></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Test name</th>
+      <th style="text-align: right">single table, TPS</th>
+      <th style="text-align: right">pg_partman, TPS</th>
+      <th style="text-align: right">pg_pathman, TPS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Select one row</td>
+      <td style="text-align: right">47973</td>
+      <td style="text-align: right">1084</td>
+      <td style="text-align: right">41775</td>
+    </tr>
+    <tr>
+      <td>Select whole one partition</td>
+      <td style="text-align: right">2302</td>
+      <td style="text-align: right">704</td>
+      <td style="text-align: right">2556</td>
+    </tr>
+    <tr>
+      <td>Insert one row</td>
+      <td style="text-align: right">34401</td>
+      <td style="text-align: right">7969</td>
+      <td style="text-align: right">25859</td>
+    </tr>
+    <tr>
+      <td>Update one row</td>
+      <td style="text-align: right">32769</td>
+      <td style="text-align: right">202</td>
+      <td style="text-align: right">29289</td>
+    </tr>
+  </tbody>
+</table>
+
+<!--more-->
+
+<p>I can make following highlights for these results.</p>
+
+<ul>
+  <li>pg_pathman is dramatically faster than pg_partman, because pg_pathman uses
+planner hooks for faster query planning while pg_partman uses built-in
+inheritance mechanism.</li>
+  <li>When selecting or updating a single row, pg_pathman is almost as fast as plain
+table.  The difference for insertion of single row is slightly bigger because
+trigger is used for that.</li>
+  <li>The difference between pg_partman and pg_pathman when selecting the whole
+partition is not as dramatic as when selecting the one row.  This is why
+planning time becomes less substantial in comparison with execution time.</li>
+  <li>Inserting random rows with pg_pathman is still much faster than with
+pg_partman while both of them use trigger on parent relation.  However,
+pg_pathman uses fast C-function for partition selection.</li>
+  <li>Selecting the whole partition when table is partitioned by pg_pathman is
+slightly faster than selecting same rows from plain table.  This is because
+sequential scan was used for selecting whole partition while index scan
+was used for selecting part of plain table.  When among of data is big and
+doesn’t fit cache this difference is expected to be much more.</li>
+</ul>
+
+<p>See <a href="https://gist.github.com/akorotkov/0d558a6e1b5ea176813a">this gist</a> for
+SQL-scripts used for benchmarking.</p>
+
+<ul>
+  <li>create_*.sql creates journal table using various partitioning methods.</li>
+  <li>select_one.sql, select_day.sql, insert.sql and update.sql are pg_bench
+scripts.</li>
+</ul>
+
+<p>P.S. This post is not a criticism of pg_partman.  It was developed long time
+before extendability mechanisms which pg_pathman use were created.  And it
+is great a extension which have served many years.</p>
+]]></content>
+  </entry>
+  
+</feed>

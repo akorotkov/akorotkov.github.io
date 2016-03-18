@@ -128,11 +128,19 @@
 
 <div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border right" src="/images/filter_data_icon.jpg" /></p>
 
-<p>In my <a href="/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve introduced <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> as an extension which accelerate query planning over partitioned tables.  In this post I would like to covert another aspect of pg_pathman: it not only produce  plans faster, but also produce better plans.  Thanks to it query execution with pg_pathman becomes much faster in some cases.</p>
+<p>In my <a href="/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve
+introduced <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> as an
+extension which accelerate query planning over partitioned tables.  In this post
+I would like to covert another aspect of pg_pathman: it not only produce  plans
+faster, but also produce better plans.  Thanks to it query execution with
+pg_pathman becomes much faster in some cases.</p>
 
-<p>When you search partitioned table with some filter conditions, pg_pathman adopts this filter to each individual partition.  Therefore, each partition receives the only filter conditions which are useful to check against it.</p>
+<p>When you search partitioned table with some filter conditions, pg_pathman adopts
+this filter to each individual partition.  Therefore, each partition receives
+the only filter conditions which are useful to check against it.</p>
 
-<p>Let me illustrate this on the example.  At first, let’s see what’s happening with filter conditions while dealing with PostgreSQL inheritance mechanism.</p>
+<p>Let me illustrate this on the example.  At first, let’s see what’s happening
+with filter conditions while dealing with PostgreSQL inheritance mechanism.</p>
 
 <!--more-->
 
@@ -216,9 +224,15 @@
 </span><span class="line"><span class="p">(</span><span class="mi">16</span> <span class="k">rows</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<p>We can see that filter condition was passed to each partition as is.  But actually it could be simplified a lot.  For instance, table test_2 could be scan without filter condition at all because all its rows are matching.  Filter condition to test_3 could be simplified to <code>ts &lt; '2015-03-15'</code>, therefore BitmapOr is not necessary.</p>
+<p>We can see that filter condition was passed to each partition as is.  But
+actually it could be simplified a lot.  For instance, table test_2 could be scan
+without filter condition at all because all its rows are matching.  Filter
+condition to test_3 could be simplified to <code>ts &lt; '2015-03-15'</code>, therefore
+BitmapOr is not necessary.</p>
 
-<p>Let’s try the same example with <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.  Firstly create test table and its partitions.</p>
+<p>Let’s try the same example with
+<a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.  Firstly create test
+table and its partitions.</p>
 
 <div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -228,7 +242,8 @@
 </span><span class="line"><span class="k">SELECT</span> <span class="n">create_range_partitions</span><span class="p">(</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="s1">&#39;ts&#39;</span><span class="p">,</span> <span class="s1">&#39;2015-01-01&#39;</span><span class="p">::</span><span class="k">timestamp</span><span class="p">,</span> <span class="s1">&#39;1 month&#39;</span><span class="p">::</span><span class="nb">interval</span><span class="p">,</span> <span class="mi">6</span><span class="p">);</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<p>Then insert test data into table.  pg_pathman automatically creates trigger which distribute data between partitions. Just like pg_partman does.</p>
+<p>Then insert test data into table.  pg_pathman automatically creates trigger
+which distribute data between partitions. Just like pg_partman does.</p>
 
 <div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 </pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">test</span> <span class="p">(</span><span class="k">SELECT</span> <span class="s1">&#39;2015-01-01&#39;</span><span class="p">::</span><span class="k">timestamp</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="nb">interval</span> <span class="s1">&#39;1 minute&#39;</span><span class="p">,</span> <span class="n">md5</span><span class="p">(</span><span class="n">i</span><span class="p">::</span><span class="nb">text</span><span class="p">)</span> <span class="k">FROM</span> <span class="n">generate_series</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1440</span> <span class="o">*</span> <span class="mi">181</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="n">i</span><span class="p">);</span>
@@ -260,58 +275,98 @@
 </span><span class="line"><span class="p">(</span><span class="mi">7</span> <span class="k">rows</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<p>We can see that pg_pathman selects the same partitions, but query plan becomes way simpler.  Now, test_2 is scanned without useless filter condition.  test_3 is scanned using just <code>ts &lt; '2015-03-15'</code> filter condition.  Thanks to it, plain Index Scan is used instead of BitmapOr.  And similar advances was applied to rest of partitions.</p>
+<p>We can see that pg_pathman selects the same partitions, but query plan becomes
+way simpler.  Now, test_2 is scanned without useless filter condition.  test_3
+is scanned using just <code>ts &lt; '2015-03-15'</code> filter condition.  Thanks to it, plain
+Index Scan is used instead of BitmapOr.  And similar advances was applied to
+rest of partitions.</p>
 
-<p>How was this simplification possible?  The common fear here is that such simplification could be computational expensive in general case.  But since pg_pathman is intended to decrease query planning time, it’s very important to keep all transformations cheap and simple.  And this cheap and simple algorithm of transformation really exists.</p>
+<p>How was this simplification possible?  The common fear here is that such
+simplification could be computational expensive in general case.  But since
+pg_pathman is intended to decrease query planning time, it’s very important to
+keep all transformations cheap and simple.  And this cheap and simple algorithm
+of transformation really exists.</p>
 
-<p>Let’s see how it works on simple example. The filter condition <code>(ts &gt;= '2015-02-01' AND ts &lt; '2015-03-15') OR (ts &gt;= '2015-05-15' AND ts &lt; '2015-07-01')</code> have following tree representation.</p>
+<p>Let’s see how it works on simple example. The filter condition <code>(ts &gt;=
+'2015-02-01' AND ts &lt; '2015-03-15') OR (ts &gt;= '2015-05-15' AND ts &lt;
+'2015-07-01')</code> have following tree representation.</p>
 
 <p><img class="no-border center" src="/images/pg_pathman_condition_1.png" /></p>
 
-<p>Leaf nodes of tree are simple conditions.  Non-leaf nodes are logical operators which forms complex conditions.  For particular partition each filter condition (either simple or complex) could be treated into one of three classes.</p>
+<p>Leaf nodes of tree are simple conditions.  Non-leaf nodes are logical operators
+which forms complex conditions.  For particular partition each filter condition
+(either simple or complex) could be treated into one of three classes.</p>
 
 <ol>
-  <li>Filter condition is always true for rows of this partition (t).  For instance, condition <code>ts &gt;= '2015-04-15'</code> is always true for partition <code>ts &gt;= 2015-05-01 AND ts &lt; 2015-06-01</code>.</li>
-  <li>Filter condition could be either true or false for rows of this partition (m). For instance, condition <code>ts &gt;= '2015-03-15'</code> could be either true or false for partition <code>ts &gt;= 2015-03-01 AND ts &lt; 2015-03-01</code>.</li>
-  <li>Filter condition is always false for rows of this partition (f).  For instance, condition <code>ts &lt;= '2015-02-01'</code> is always false for partition <code>ts &gt;= 2015-04-01 AND ts &lt; 2015-04-01</code>.</li>
+  <li>
+    <p>Filter condition is always true for rows of this partition (t).  For
+instance, condition <code>ts &gt;= '2015-04-15'</code> is always true for partition <code>ts &gt;=
+2015-05-01 AND ts &lt; 2015-06-01</code>.</p>
+  </li>
+  <li>
+    <p>Filter condition could be either true or false for rows of this partition
+(m). For instance, condition <code>ts &gt;= '2015-03-15'</code> could be either true or
+false for partition <code>ts &gt;= 2015-03-01 AND ts &lt; 2015-03-01</code>.</p>
+  </li>
+  <li>
+    <p>Filter condition is always false for rows of this partition (f).  For
+instance, condition <code>ts &lt;= '2015-02-01'</code> is always false for partition <code>ts &gt;=
+2015-04-01 AND ts &lt; 2015-04-01</code>.</p>
+  </li>
 </ol>
 
-<p>We can mark each tree node with vector of classes which corresponding condition is treated against each partition.  These vectors could be filled upwards: for leaf nodes first, and then for non-leaf nodes using tri-state logic.</p>
+<p>We can mark each tree node with vector of classes which corresponding condition
+is treated against each partition.  These vectors could be filled upwards: for
+leaf nodes first, and then for non-leaf nodes using tri-state logic.</p>
 
 <p><img class="no-border center" src="/images/pg_pathman_condition_2.png" /></p>
 
-<p>It’s evident that only conditions which could be either true or false (m) are useful for filtering.  Conditions which are always true or always false shouldn’t be presented in the partitions filter.  Using produced three we can now produce filter conditions for each partition.</p>
+<p>It’s evident that only conditions which could be either true or false (m) are
+useful for filtering.  Conditions which are always true or always false
+shouldn’t be presented in the partitions filter.  Using produced three we can
+now produce filter conditions for each partition.</p>
 
 <ol>
   <li>
-    <p>For <code>ts &gt;= 2015-01-01 AND ts &lt; 2015-02-01</code> partition, whole filter condition is false. So, skip it.</p>
+    <p>For <code>ts &gt;= 2015-01-01 AND ts &lt; 2015-02-01</code> partition, whole filter condition
+is false. So, skip it.</p>
   </li>
   <li>
-    <p>For <code>ts &gt;= 2015-02-01 AND ts &lt; 2015-03-01</code> partition, whole filter condition is true. So, scan it without filter.</p>
+    <p>For <code>ts &gt;= 2015-02-01 AND ts &lt; 2015-03-01</code> partition, whole filter condition
+is true. So, scan it without filter.</p>
   </li>
   <li>
-    <p>For <code>ts &gt;= 2015-03-01 AND ts &lt; 2015-04-01</code> partition, filter condition tree would be reduced into following tree.</p>
+    <p>For <code>ts &gt;= 2015-03-01 AND ts &lt; 2015-04-01</code> partition, filter condition tree
+would be reduced into following tree.</p>
 
     <p><img class="no-border center" src="/images/pg_pathman_condition_3.png" /></p>
 
     <p>Therefore, this partition will be scan with <code>ts &lt; '2015-03-15'</code> filter.</p>
   </li>
   <li>
-    <p>For <code>ts &gt;= 2015-04-01 AND ts &lt; 2015-05-01</code> partition, whole filter condition is false. So, skip it.</p>
+    <p>For <code>ts &gt;= 2015-04-01 AND ts &lt; 2015-05-01</code> partition, whole filter condition
+is false. So, skip it.</p>
   </li>
   <li>
-    <p>For <code>ts &gt;= 2015-05-01 AND ts &lt; 2015-06-01</code> partition, filter condition tree would be reduced into following tree.</p>
+    <p>For <code>ts &gt;= 2015-05-01 AND ts &lt; 2015-06-01</code> partition, filter condition tree
+would be reduced into following tree.</p>
 
     <p><img class="no-border center" src="/images/pg_pathman_condition_4.png" /></p>
 
     <p>Therefore, this partition will be scan with <code>ts &gt;= '2015-05-15'</code> filter.</p>
   </li>
   <li>
-    <p>For <code>ts &gt;= 2015-06-01 AND ts &lt; 2015-07-01</code> partition, whole filter condition is true. So, scan it without filter.</p>
+    <p>For <code>ts &gt;= 2015-06-01 AND ts &lt; 2015-07-01</code> partition, whole filter condition
+is true. So, scan it without filter.</p>
   </li>
 </ol>
 
-<p>This is how filter conditions processing works in <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.  The explanation could be a bit exhausting for reading, but I hope you feel enlighten by getting how it works.  I remember that pg_pathman is open source extension for PostgreSQL 9.5 in beta-release stage.  I appeal to everyone interested for trying it and sharing a feedback.</p>
+<p>This is how filter conditions processing works in
+<a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.  The explanation could
+be a bit exhausting for reading, but I hope you feel enlighten by getting how it
+works.  I remember that pg_pathman is open source extension for PostgreSQL 9.5
+in beta-release stage.  I appeal to everyone interested for trying it and
+sharing a feedback.</p>
 
 </div>
 
@@ -364,6 +419,8 @@
             <li class="previous"><a href="/blog/2016/03/04/pg_pathman-beta-release/" title="Previous Post: pg_pathman beta release">&laquo; pg_pathman beta release</a></li>
             
             
+            <li class="next"><a href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/" title="Next Post: pg_pathman UPDATE and DELETE support and benchmark">pg_pathman UPDATE and DELETE support and benchmark &raquo;</a></li>
+            
           </ul>
         
       </footer>
@@ -386,6 +443,8 @@
   </div>
   
   <div id="recent_posts" class="list-group">
+    
+    <a class="list-group-item " href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/">Pg_pathman UPDATE and DELETE Support and Benchmark</a>
     
     <a class="list-group-item active" href="/blog/2016/03/14/pg_pathman-condition-processing/">How Does Pg_pathman Handle Filter Conditions?</a>
     
