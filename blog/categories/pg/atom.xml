@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Pg | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/pg/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-03-18T12:29:56+03:00</updated>
+  <updated>2016-03-18T16:31:20+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -122,8 +122,8 @@ scripts.</li>
 </ul>
 
 <p>P.S. This post is not a criticism of pg_partman.  It was developed long time
-before extendability mechanisms which pg_pathman use were created.  And it
-is great a extension which have served many years.</p>
+before extendability mechanisms which pg_pathman use were created.  And it is
+a great extension which has served many years.</p>
 ]]></content>
   </entry>
   
