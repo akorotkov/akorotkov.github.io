@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Sampling | Alexander Korotkov's blog]]></title>
+  <link href="http://akorotkov.github.io/blog/categories/sampling/atom.xml" rel="self"/>
+  <link href="http://akorotkov.github.io/"/>
+  <updated>2016-03-25T15:43:43+03:00</updated>
+  <id>http://akorotkov.github.io/</id>
+  <author>
+    <name><![CDATA[Alexander Korotkov]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Monitoring Wait Events in PostgreSQL 9.6]]></title>
+    <link href="http://akorotkov.github.io/blog/2016/08/26/wait_monitoring_9_6/"/>
+    <updated>2016-08-26T18:00:00+03:00</updated>
+    <id>http://akorotkov.github.io/blog/2016/08/26/wait_monitoring_9_6</id>
+    <content type="html"><![CDATA[<p>Recently Robert Haas
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=53be0b1add7064ca5db3cd884302dfc3268d884e">committed</a>
+which allows seeing some more detailed information about current wait event
+of the process.  In particular, user will be able to see if process is waiting
+for heavyweight lock, lightweight lock (either individual or tranche) or buffer
+pin.  The full list of wait events is available in the
+<a href="http://www.postgresql.org/docs/devel/static/monitoring-stats.html#WAIT-EVENT-TABLE">documentation</a>.
+Hopefully, it will be more wait events in further releases.</p>
+
+<p>It’s nice to see current wait event of the process, but just one snapshot is
+not very descriptive and definitely not enough to do any conclusion.  But
+we can use sampling for collecting suitable statistics.  This is why I’d like
+to present <a href="https://github.com/postgrespro/pg_wait_sampling">pg_wait_sampling</a>
+which automates gathering sampling statistics of wait events.  pg_wait_sampling
+enables you to gather statistics for graphs like the one below.</p>
+
+<p><img class="no-border" src="/images/wait_monitoring.png"></p>
+
+<!--more-->
+
+<p>Let me explain you how did I draw this graph. pg_wait_sampling samples wait
+events into two destinations: history and profile.  History is an in-memory
+ring buffer and profile is an in-memory hash table with accumulated statistics.
+We’re going to use the second one to see insensitivity of wait events over time
+periods.</p>
+
+<p>At first, let’s create table for accumulated statistics.  I’m doing these
+experiments on my laptop, and for the simplicity this table will live in the
+instance under monitoring.  But note, that such table could live on the another
+server.  I’d even say it’s preferable to place such data to another server.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">profile_log</span> <span class="p">(</span>
+</span><span class='line'>    <span class="n">ts</span>         <span class="k">timestamp</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">event_type</span> <span class="nb">text</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">event</span>      <span class="nb">text</span><span class="p">,</span>
+</span><span class='line'>    <span class="k">count</span>      <span class="nb">int8</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>Secondly, I wrote a function to copy data from pg_wait_sampling_profile view to
+profile_log table and clean profile data.  This function returns number of
+rows inserted into profile_log table.  Also, this function discards pid number
+and groups data by wait event.  And this is not necessary needed to be so.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="k">OR</span> <span class="k">REPLACE</span> <span class="k">FUNCTION</span> <span class="n">write_profile_log</span><span class="p">()</span> <span class="k">RETURNS</span> <span class="nb">integer</span> <span class="k">AS</span> <span class="o">&lt;</span><span class="n">script</span> <span class="k">type</span><span class="o">=</span><span class="ss">&quot;math/tex&quot;</span><span class="o">&gt;</span><span class="k">DECLARE</span>
+</span><span class='line'>    <span class="k">result</span> <span class="nb">integer</span><span class="p">;</span>
+</span><span class='line'><span class="k">BEGIN</span>
+</span><span class='line'>    <span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">profile_log</span>
+</span><span class='line'>        <span class="k">SELECT</span> <span class="k">current_timestamp</span><span class="p">,</span> <span class="n">event_type</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="k">SUM</span><span class="p">(</span><span class="k">count</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">FROM</span> <span class="n">pg_wait_sampling_profile</span>
+</span><span class='line'>        <span class="k">WHERE</span> <span class="n">event</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span>
+</span><span class='line'>        <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">event_type</span><span class="p">,</span> <span class="n">event</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">GET</span> <span class="k">DIAGNOSTICS</span> <span class="k">result</span> <span class="o">=</span> <span class="k">ROW_COUNT</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">PERFORM</span> <span class="n">pg_wait_sampling_reset_profile</span><span class="p">();</span>
+</span><span class='line'>    <span class="k">RETURN</span> <span class="k">result</span><span class="p">;</span>
+</span><span class='line'><span class="k">END</span><span class="o">&lt;/</span><span class="n">script</span><span class="o">&gt;</span>
+</span><span class='line'><span class="k">LANGUAGE</span> <span class="err">‘</span><span class="n">plpgsql</span><span class="err">’</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>And then I run psql session where setup watch of this function.  Monitoring of
+our system is started.  For real usage it’s better to schedule this command
+using cron or something.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="n">smagen</span><span class="o">@</span><span class="n">postgres</span><span class="o">=#</span> <span class="k">SELECT</span> <span class="n">write_profile_log</span><span class="p">();</span>
+</span><span class='line'> <span class="n">write_profile_log</span>
+</span><span class='line'><span class="err">——————</span><span class="o">-</span>
+</span><span class='line'>                 <span class="mi">0</span>
+</span><span class='line'><span class="p">(</span><span class="mi">1</span> <span class="k">row</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">smagen</span><span class="o">@</span><span class="n">postgres</span><span class="o">=#</span> <span class="err">\</span><span class="n">watch</span> <span class="mi">10</span>
+</span><span class='line'><span class="n">Fri</span> <span class="n">Mar</span> <span class="mi">25</span> <span class="mi">14</span><span class="p">:</span><span class="mi">03</span><span class="p">:</span><span class="mi">09</span> <span class="mi">2016</span> <span class="p">(</span><span class="k">every</span> <span class="mi">10</span><span class="n">s</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h2</span> <span class="n">id</span><span class="o">=</span><span class="ss">&quot;writeprofilelog&quot;</span><span class="o">&gt;</span><span class="n">write_profile_log</span><span class="o">&lt;/</span><span class="n">h2</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>             <span class="mi">0</span> <span class="p">(</span><span class="mi">1</span> <span class="k">row</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>We can see that write_profile_log returns 0.  That means we didn’t insert
+anything to profile_log.  And this is right because system is not under load
+now.  Let us create some load using pgbench.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>pgbench -i -s <span class="m">10</span> postgres
+</span><span class='line'><span class="nv">$ </span>pgbench -j <span class="m">10</span> -c <span class="m">10</span> -M prepared -T <span class="m">60</span> postgres
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>In the parallel session we can see that write_profile_log starts to insert some
+data to profile_log table.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="n">Fri</span> <span class="n">Mar</span> <span class="mi">25</span> <span class="mi">14</span><span class="p">:</span><span class="mi">04</span><span class="p">:</span><span class="mi">19</span> <span class="mi">2016</span> <span class="p">(</span><span class="k">every</span> <span class="mi">10</span><span class="n">s</span><span class="p">)</span>
+</span><span class='line'> <span class="n">write_profile_log</span>
+</span><span class='line'><span class="err">——————</span><span class="o">-</span>
+</span><span class='line'>                 <span class="mi">9</span>
+</span><span class='line'><span class="p">(</span><span class="mi">1</span> <span class="k">row</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>Finally, let’s examine the profile_log table.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">profile_log</span><span class="p">;</span>
+</span><span class='line'>             <span class="n">ts</span>             <span class="o">|</span>  <span class="n">event_type</span>   <span class="o">|</span>       <span class="n">event</span>       <span class="o">|</span> <span class="k">count</span>
+</span><span class='line'><span class="err">—————————</span><span class="o">-+</span><span class="err">—————</span><span class="o">+</span><span class="err">——————</span><span class="o">-+</span><span class="err">——</span><span class="o">-</span>
+</span><span class='line'> <span class="mi">2016</span><span class="o">-</span><span class="mi">03</span><span class="o">-</span><span class="mi">25</span> <span class="mi">14</span><span class="p">:</span><span class="mi">03</span><span class="p">:</span><span class="mi">19</span><span class="p">.</span><span class="mi">286394</span> <span class="o">|</span> <span class="k">Lock</span>          <span class="o">|</span> <span class="n">tuple</span>             <span class="o">|</span>    <span class="mi">41</span>
+</span><span class='line'> <span class="mi">2016</span><span class="o">-</span><span class="mi">03</span><span class="o">-</span><span class="mi">25</span> <span class="mi">14</span><span class="p">:</span><span class="mi">03</span><span class="p">:</span><span class="mi">19</span><span class="p">.</span><span class="mi">286394</span> <span class="o">|</span> <span class="n">LWLockTranche</span> <span class="o">|</span> <span class="n">lock_manager</span>      <span class="o">|</span>     <span class="mi">1</span>
+</span><span class='line'> <span class="mi">2016</span><span class="o">-</span><span class="mi">03</span><span class="o">-</span><span class="mi">25</span> <span class="mi">14</span><span class="p">:</span><span class="mi">03</span><span class="p">:</span><span class="mi">19</span><span class="p">.</span><span class="mi">286394</span> <span class="o">|</span> <span class="n">LWLockTranche</span> <span class="o">|</span> <span class="n">buffer_content</span>    <span class="o">|</span>    <span class="mi">68</span>
+</span><span class='line'> <span class="mi">2016</span><span class="o">-</span><span class="mi">03</span><span class="o">-</span><span class="mi">25</span> <span class="mi">14</span><span class="p">:</span><span class="mi">03</span><span class="p">:</span><span class="mi">19</span><span class="p">.</span><span class="mi">286394</span> <span class="o">|</span> <span class="n">LWLockTranche</span> <span class="o">|</span> <span class="n">wal_insert</span>        <span class="o">|</span>     <span class="mi">3</span>
+</span><span class='line'> <span class="mi">2016</span><span class="o">-</span><span class="mi">03</span><span class="o">-</span><span class="mi">25</span> <span class="mi">14</span><span class="p">:</span><span class="mi">03</span><span class="p">:</span><span class="mi">19</span><span class="p">.</span><span class="mi">286394</span> <span class="o">|</span> <span class="n">LWLockNamed</span>   <span class="o">|</span> <span class="n">WALWriteLock</span>      <span class="o">|</span>    <span class="mi">68</span>
+</span><span class='line'> <span class="mi">2016</span><span class="o">-</span><span class="mi">03</span><span class="o">-</span><span class="mi">25</span> <span class="mi">14</span><span class="p">:</span><span class="mi">03</span><span class="p">:</span><span class="mi">19</span><span class="p">.</span><span class="mi">286394</span> <span class="o">|</span> <span class="k">Lock</span>          <span class="o">|</span> <span class="n">transactionid</span>     <span class="o">|</span>   <span class="mi">331</span>
+</span><span class='line'> <span class="mi">2016</span><span class="o">-</span><span class="mi">03</span><span class="o">-</span><span class="mi">25</span> <span class="mi">14</span><span class="p">:</span><span class="mi">03</span><span class="p">:</span><span class="mi">19</span><span class="p">.</span><span class="mi">286394</span> <span class="o">|</span> <span class="n">LWLockNamed</span>   <span class="o">|</span> <span class="n">ProcArrayLock</span>     <span class="o">|</span>     <span class="mi">8</span>
+</span><span class='line'> <span class="mi">2016</span><span class="o">-</span><span class="mi">03</span><span class="o">-</span><span class="mi">25</span> <span class="mi">14</span><span class="p">:</span><span class="mi">03</span><span class="p">:</span><span class="mi">19</span><span class="p">.</span><span class="mi">286394</span> <span class="o">|</span> <span class="n">LWLockNamed</span>   <span class="o">|</span> <span class="n">WALBufMappingLock</span> <span class="o">|</span>     <span class="mi">5</span>
+</span><span class='line'> <span class="mi">2016</span><span class="o">-</span><span class="mi">03</span><span class="o">-</span><span class="mi">25</span> <span class="mi">14</span><span class="p">:</span><span class="mi">03</span><span class="p">:</span><span class="mi">19</span><span class="p">.</span><span class="mi">286394</span> <span class="o">|</span> <span class="n">LWLockNamed</span>   <span class="o">|</span> <span class="n">CLogControlLock</span>   <span class="o">|</span>     <span class="mi">1</span>
+</span><span class='line'><span class="err">………………………………………………………………</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>How to interpret these data?  In the first row we can see that count for tuple
+lock for 14:03:19 is 41.  The pg_wait_sampling collector samples wait event
+every 10 ms while write_profile_log function writes snapshot of profile every
+10 s.  Thus, it was 1000 samples during this period.  Taking into account that
+it was 10 backends serving pgbench, we can read the first row as “from 14:03:09
+to 14:03:19 backends spend about 0.41% of time in waiting for tuple lock”.</p>
+
+<p>That’s it.  This blog post shows how you can setup a wait event monitoring
+of your database using
+<a href="https://github.com/postgrespro/pg_wait_sampling">pg_wait_sampling</a>
+extension with PostgreSQL 9.6.  This example was given just for introduction and
+it is simplified in many ways.  But experienced DBAs would easily adopt it for
+their setups.</p>
+
+<p>P.S. Every monitoring has some overhead.  Overhead of wait monitoring was
+subject of hot debates in mailing lists.  This is why features like exposing
+wait events parameters and measuring each wait event individually are not yet
+in 9.6.  But sampling also has overhead.  I hope pg_wait_sampling would be a
+start point to show on comparison that other approaches are not that bad, and
+finally we would have something way more advanced for 9.7.</p>
+
+]]></content>
+  </entry>
+  
+</feed>

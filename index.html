@@ -117,6 +117,64 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-08-26T18:00:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri 26 Aug 2016,  6:00 PM</time>
+        
+      </p>
+    
+    
+      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2016/08/26/wait_monitoring_9_6/" itemprop="url">Monitoring Wait Events in PostgreSQL 9.6</a></h2>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Recently Robert Haas
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=53be0b1add7064ca5db3cd884302dfc3268d884e">committed</a>
+which allows seeing some more detailed information about current wait event
+of the process.  In particular, user will be able to see if process is waiting
+for heavyweight lock, lightweight lock (either individual or tranche) or buffer
+pin.  The full list of wait events is available in the
+<a href="http://www.postgresql.org/docs/devel/static/monitoring-stats.html#WAIT-EVENT-TABLE">documentation</a>.
+Hopefully, it will be more wait events in further releases.</p>
+
+<p>It’s nice to see current wait event of the process, but just one snapshot is
+not very descriptive and definitely not enough to do any conclusion.  But
+we can use sampling for collecting suitable statistics.  This is why I’d like
+to present <a href="https://github.com/postgrespro/pg_wait_sampling">pg_wait_sampling</a>
+which automates gathering sampling statistics of wait events.  pg_wait_sampling
+enables you to gather statistics for graphs like the one below.</p>
+
+<p><img class="no-border" src="/images/wait_monitoring.png" /></p>
+
+</div>
+  
+  
+    <footer>
+      <a class="read-more btn btn-default" href="/blog/2016/08/26/wait_monitoring_9_6/">Read on &rarr;</a>
+    </footer>
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-18T12:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri 18 Mar 2016, 12:20 PM</time>
         
       </p>
@@ -493,6 +551,8 @@ typing <code>:gdb</code>.</p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/2016/08/26/wait_monitoring_9_6/">Monitoring Wait Events in PostgreSQL 9.6</a>
+    
     <a class="list-group-item " href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/">Pg_pathman UPDATE and DELETE Support and Benchmark</a>
     
     <a class="list-group-item " href="/blog/2016/03/14/pg_pathman-condition-processing/">How Does Pg_pathman Handle Filter Conditions?</a>
@@ -500,8 +560,6 @@ typing <code>:gdb</code>.</p>
     <a class="list-group-item " href="/blog/2016/03/04/pg_pathman-beta-release/">Pg_pathman Beta Release</a>
     
     <a class="list-group-item " href="/blog/2015/09/07/jsonb_statistics/">Thoughts About Jsonb Statistics</a>
-    
-    <a class="list-group-item " href="/blog/2015/08/26/psql-gdb-attach/">Psql Command to Attach Gdb to Backend</a>
     
   </div>
 </section>

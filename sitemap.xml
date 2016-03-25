@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://akorotkov.github.io/blog/2016/08/26/wait_monitoring_9_6/</loc>
+    <lastmod>2016-08-26T18:00:00+03:00</lastmod>
+  </url>
+  <url>
     <loc>http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/</loc>
     <lastmod>2016-03-18T12:20:00+03:00</lastmod>
   </url>
@@ -64,5 +68,17 @@
   </url>
   <url>
     <loc>http://akorotkov.github.io/blog/categories/benchmark/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/wait/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/monitoring/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/sampling/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/pg-wait-sampling/</loc>
   </url>
 </urlset>
