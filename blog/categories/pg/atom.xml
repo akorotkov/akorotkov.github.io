@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Pg | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/pg/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-03-25T15:43:43+03:00</updated>
+  <updated>2016-03-29T12:56:02+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Monitoring Wait Events in PostgreSQL 9.6]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/08/26/wait_monitoring_9_6/"/>
-    <updated>2016-08-26T18:00:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/08/26/wait_monitoring_9_6</id>
+    <link href="http://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6/"/>
+    <updated>2016-03-25T18:00:00+03:00</updated>
+    <id>http://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6</id>
     <content type="html"><![CDATA[<p>Recently Robert Haas
 <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=53be0b1add7064ca5db3cd884302dfc3268d884e">committed</a>
 which allows seeing some more detailed information about current wait event
