@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Pg_pathman Beta Release - Alexander Korotkov's blog</title>
+  <title>Extensible Access Methods Are Committed to 9.6 - Alexander Korotkov's blog</title>
   <meta name="author" content="Alexander Korotkov">
 
   
@@ -14,15 +14,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/">
+  <link rel="canonical" href="http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/">
   <link href="/favicon.png" type="image/png" rel="icon">
   <link href="/atom.xml" rel="alternate" title="Alexander Korotkov's blog" type="application/atom+xml">
 
   <!-- http://opengraphprotocol.org/ -->
   <meta name="twitter:card" content="summary_large_image">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/">
-  <meta property="og:title" content="Pg_pathman Beta Release - Alexander Korotkov's blog">
+  <meta property="og:url" content="http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/">
+  <meta property="og:title" content="Extensible Access Methods Are Committed to 9.6 - Alexander Korotkov's blog">
   
 
   <script src="/javascripts/libs/jquery/jquery-2.1.3.min.js"></script>
@@ -113,67 +113,84 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-04T17:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri  4 Mar 2016,  5:10 PM</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-04-06T15:26:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Wed  6 Apr 2016,  3:26 PM</time>
         
       </p>
     
     
     <h1 class="entry-title" itemprop="name headline">
-        Pg_pathman Beta Release
+        Extensible Access Methods Are Committed to 9.6
         
     </h1>
     
   </header>
 
 
-<div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border" src="/images/partitiontable.jpg" /></p>
+<div class="entry-content clearfix" itemprop="articleBody description"><p>PostgreSQL 9.6 receives suitable support of extensible index access methods.
+And that’s good news because Postgres was initially designed to support it.</p>
 
-<p>Partitioning in PostgreSQL is traditionally implemented using <a href="http://www.postgresql.org/docs/9.5/static/ddl-partitioning.html">table
-inheritance</a>.
-Table inheritance allow planner to include into plan only those child tables
-(partitions) which are compatible with query.  Simultaneously a lot of work on
-partitions management remains on users: create inherited tables, writing trigger
-which selects appropriate partition for row inserting etc.  In order to automate
-this work pg_partman extension was written.  Also, there is upcoming work on
-<a href="http://www.postgresql.org/message-
-id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a> by Amit Langote for PostgreSQL core.</p>
+<blockquote>
+  <p>“It is imperative that a user be able to construct new access methods to 
+provide efficient access to instances of nontraditional base types”</p>
 
-<p>In Postgres Professional we notice performance problem of inheritance based
-partitioning.  The problem is that planner selects children tables compatible
-with query by linear scan.  Thus, for query which selects just one row from one
-partition it would be much slower to plan than to execute.  This fact
-discourages many users and this is why we’re working on new PostgreSQL
-extension: <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.</p>
+  <p>Michael Stonebraker, Jeff Anton, Michael Hirohama.
+Extendability in POSTGRES , IEEE Data Eng. Bull. 10 (2) pp.16-23, 1987</p>
+</blockquote>
 
-<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> caches partitions
-meta-information and uses set_rel_pathlist hook in order to replace mechanism of
-child tables selection by its own mechanism.  Thanks to this binary search
-algorithm over sorted array is used for range partitioning and hash table
-lookup for hash partitioning.  Therefore, time spent to partition selection
-appears to be negligible in comparison with forming of result plan nodes.  See
-<a href="http://www.postgrespro.com/blog/pgsql/pg_pathman">postgrespro blog post</a> for
-performance benchmarks.</p>
+<p>That was a huge work which consists of multiple steps.</p>
 
-<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> now in beta-release
-status and we encourage all interested users to try it and give us a feedback.
-pg_pathman is compatible with PostgreSQL 9.5 and distributed under PostgreSQL
-license.  In the future we’re planning to enhance functionality of pg_pathman
-by following features.</p>
+<!--more-->
+
+<ol>
+  <li>Rework access method interface so that access method internals are hidden
+from SQL level to C level.  Besides help for custom access methods support,
+this refactoring is good by itself.<br />
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=65c5fcd353a859da9e61bfb2b92a99f12937de3b">Committed</a>
+by Tom Lane.</li>
+  <li><code>CREATE ACCESS METHOD</code> command which provides legal way for insertion into
+pg_am with support of dependencies and pg_dump/pg_restore.
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=473b93287040b20017cc25a157cffdc5b978c254">Committed</a>
+by Alvaro Herrera.</li>
+  <li>Generic WAL interface which provides custom access methods the way to be
+WAL-logged.  Each built-in access method has its own type of WAL records.
+But custom access method shouldn’t because it could affect reliability.
+Generic WAL records represent difference between pages in general way as
+result of per-byte comparison of original and modified images of the page.
+For sure, it is not as efficient as own type of WAL records, but there is
+no choice under restrictions we have.
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=65578341af1ae50e52e0f45e691ce88ad5a1b9b1">Committed</a>
+by Teodor Sigaev.</li>
+  <li>Bloom contrib module which is example of custom index access method which
+uses generic WAL interface.  This contrib is essential for testing
+infrastructure described above.  Also, this access method could be useful by
+itself.
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=9ee014fc899a28a198492b074e32b60ed8915ea9">Committed</a>
+by Teodor Sigaev.</li>
+</ol>
+
+<p>I am very thankful for the efforts of committers and reviewers who make it
+possible to include these features into PostgreSQL.</p>
+
+<p>However, end users don’t really care about this infrastructure.  They do care
+about features we can provide on the base of this infrastructure.  Actually,
+we would be able to have index access methods which are:</p>
 
 <ul>
-  <li>Execute time selection of partitions using custom nodes (useful for nested
-loops and prepared statements);</li>
-  <li>Optimization of ordering output from partitioned tables (useful for merge
-join and order by);</li>
-  <li>Optimization of hash join when both tables are partitioned by join key;</li>
-  <li>LIST-partitioning;</li>
-  <li>HASH-partitioning by attributes of any hashable type.</li>
+  <li>Too hard to add to PostgreSQL core.  For instance, we presented
+<a href="https://wiki.postgresql.org/images/2/25/Full-text_search_in_PostgreSQL_in_milliseconds-extended-version.pdf">fast FTS</a>
+in 2012.  We have 2 of 4 GIN features committed to core.  And it seems to be
+very long way to have rest of features in core.  But since 9.6 we would
+provide it as an extension.</li>
+  <li>Not patent free.  There are some interesting data structures which are
+covered by patents (Fractal Tree index, for example).  This is why they
+couldn’t be added to PostgreSQL core.  Since 9.6, they could be provided
+without fork.</li>
 </ul>
 
-<p>Despite we have pg_pathman useful here and now, we want this functionality to
-eventually become part of PostgreSQL core.  This is why we are going to join
-work on declarative partitioning by Amit Langote which have excellent DDL
-infrastructure and fulfill it with effective internal algorithms.</p>
+<p>Also, I consider this work as an approach (together with FDW) to pluggable
+storage engines.  I will speak about this during my
+<a href="http://www.pgcon.org/2016/schedule/events/920.en.html">talk at PGCon 2016</a>.</p>
+
 </div>
 
 
@@ -197,13 +214,13 @@ infrastructure and fulfill it with effective internal algorithms.</p>
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-04T17:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri  4 Mar 2016,  5:10 PM</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-04-06T15:26:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Wed  6 Apr 2016,  3:26 PM</time>
           
 
 <span class="glyphicon glyphicon-tags"></span>&nbsp;
 <span class="categories">
   
-    <a class='category' href='/blog/categories/partitioning/'>partitioning</a>, <a class='category' href='/blog/categories/pg/'>pg</a>, <a class='category' href='/blog/categories/pg-pathman/'>pg_pathman</a>
+    <a class='category' href='/blog/categories/am/'>am</a>, <a class='category' href='/blog/categories/bloom/'>bloom</a>, <a class='category' href='/blog/categories/extendability/'>extendability</a>, <a class='category' href='/blog/categories/pg/'>pg</a>
   
 </span>
 
@@ -222,10 +239,8 @@ infrastructure and fulfill it with effective internal algorithms.</p>
         
           <ul class="meta text-muted pager">
             
-            <li class="previous"><a href="/blog/2015/09/07/jsonb_statistics/" title="Previous Post: Thoughts about jsonb statistics">&laquo; Thoughts about jsonb statistics</a></li>
+            <li class="previous"><a href="/blog/2016/03/25/wait_monitoring_9_6/" title="Previous Post: Monitoring wait events in PostgreSQL 9.6">&laquo; Monitoring wait events in PostgreSQL 9.6</a></li>
             
-            
-            <li class="next"><a href="/blog/2016/03/14/pg_pathman-condition-processing/" title="Next Post: How does pg_pathman handle filter conditions?">How does pg_pathman handle filter conditions? &raquo;</a></li>
             
           </ul>
         
@@ -250,7 +265,7 @@ infrastructure and fulfill it with effective internal algorithms.</p>
   
   <div id="recent_posts" class="list-group">
     
-    <a class="list-group-item " href="/blog/2016/04/06/extensible-access-methods/">Extensible Access Methods Are Committed to 9.6</a>
+    <a class="list-group-item active" href="/blog/2016/04/06/extensible-access-methods/">Extensible Access Methods Are Committed to 9.6</a>
     
     <a class="list-group-item " href="/blog/2016/03/25/wait_monitoring_9_6/">Monitoring Wait Events in PostgreSQL 9.6</a>
     
@@ -258,7 +273,7 @@ infrastructure and fulfill it with effective internal algorithms.</p>
     
     <a class="list-group-item " href="/blog/2016/03/14/pg_pathman-condition-processing/">How Does Pg_pathman Handle Filter Conditions?</a>
     
-    <a class="list-group-item active" href="/blog/2016/03/04/pg_pathman-beta-release/">Pg_pathman Beta Release</a>
+    <a class="list-group-item " href="/blog/2016/03/04/pg_pathman-beta-release/">Pg_pathman Beta Release</a>
     
   </div>
 </section>
@@ -294,8 +309,8 @@ infrastructure and fulfill it with effective internal algorithms.</p>
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/';
-        var disqus_url = 'http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/';
+        var disqus_identifier = 'http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/';
+        var disqus_url = 'http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/';
         var disqus_script = 'embed.js';
       
     (function () {

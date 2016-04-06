@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/</loc>
+    <lastmod>2016-04-06T15:26:00+03:00</lastmod>
+  </url>
+  <url>
     <loc>http://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6/</loc>
     <lastmod>2016-03-25T18:00:00+03:00</lastmod>
   </url>
@@ -80,5 +84,14 @@
   </url>
   <url>
     <loc>http://akorotkov.github.io/blog/categories/pg-wait-sampling/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/am/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/extendability/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/bloom/</loc>
   </url>
 </urlset>
