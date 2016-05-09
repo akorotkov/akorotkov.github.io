@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Buffer Manager | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/buffer-manager/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-05-09T12:49:48+03:00</updated>
+  <updated>2016-05-09T14:32:08+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -14,7 +14,7 @@
 
   
   <entry>
-    <title type="html"><![CDATA[PostgreSQL Scalability: Towards Millions of TPS]]></title>
+    <title type="html"><![CDATA[PostgreSQL Scalability: Towards Millions TPS]]></title>
     <link href="http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps/"/>
     <updated>2016-05-09T12:50:00+03:00</updated>
     <id>http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps</id>
