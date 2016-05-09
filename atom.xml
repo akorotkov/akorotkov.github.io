@@ -4,7 +4,7 @@
   <title><![CDATA[Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-04-06T15:26:53+03:00</updated>
+  <updated>2016-05-09T12:49:48+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -12,6 +12,93 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[PostgreSQL Scalability: Towards Millions of TPS]]></title>
+    <link href="http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps/"/>
+    <updated>2016-05-09T12:50:00+03:00</updated>
+    <id>http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps</id>
+    <content type="html"><![CDATA[<p>PostgreSQL scalability on mulicore and multisocket machines became a subject
+of optimization long time ago once such machines became widely used.
+<a href="http://suckit.blog.hu/2009/09/29/postgresql_history">This blog post</a> shows
+brief history of vertical scalability improvements between versions 8.0 and 8.4.
+PostgreSQL 9.2 had very noticeable scalability improvement.  Thanks to fast
+path locking and other optimizations it becomes possible to achieve
+<a href="http://rhaas.blogspot.ru/2012/04/did-i-say-32-cores-how-about-64.html">more than 350 000 TPS in select-only pgbench test</a>.  The latest stable release PostgreSQL 9.5 also
+contain significant scalability advancements including LWLock improvement which
+allows achieving <a href="http://amitkapila16.blogspot.ru/2015/01/read-scalability-in-postgresql-95.html">about 400 000 TPS in select-only pgbench test</a>.</p>
+
+<p>Postgres Professional company also became involved into scalability
+optimization.  In partnership with IBM we researched PostgreSQL scalability on
+modern Power8 servers.  The results of this research was published in
+<a href="https://habrahabr.ru/company/postgrespro/blog/270827/">popular Russian blog habrahabr</a>
+(<a href="https://translate.google.com/translate?sl=ru&amp;tl=en&amp;js=y&amp;prev=_t&amp;hl=ru&amp;ie=UTF-8&amp;u=https%3A%2F%2Fhabrahabr.ru%2Fcompany%2Fpostgrespro%2Fblog%2F270827%2F&amp;edit-text=&amp;act=url">Google translated version</a>).
+As brief result of this research we identify two ways to improve PostgreSQL
+scalability on Power8:</p>
+
+<ol>
+  <li>Implement Pin/UnpinBuffer() using CAS operations instead of
+buffer header spinlock;</li>
+  <li>Optimize LWLockAttemptLock() in assembly to make fewer loops for changing
+lwlock state.</li>
+</ol>
+
+<p>The optimization #1 appears to give huge benefit on big Intel servers as well,
+while optimization #2 is Power-specific.  After long rounds of optimization,
+cleaning and testing #1 was finally
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=48354581a49c30f5757c203415aa8412d85b0f70">committed by Andres Freund</a>.</p>
+
+<p><img class="no-border 2x center" src="http://akorotkov.github.io/images/scalability.png" /></p>
+
+<!--more-->
+
+<p>On the graph above, following PostgreSQL versions were compared:</p>
+
+<ol>
+  <li>9.5.2 release – peak is 540 000 TPS with 60 clients,</li>
+  <li>9.6 master (more precisely <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=59455018">59455018</a>) – peak is 1 064 000 TPS with
+110 clients,</li>
+  <li>9.6 master where all PGXACTs were full cacheline aligned – peak is
+1 722 000 TPS with 200 clients.</li>
+</ol>
+
+<p>Alignment issues worth some explanation.  Initially, I complained performance
+regression introduced by commit <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=5364b357">5364b357</a>
+which increases number of clog buffers.  That was strange by itself, because
+read-only benchmark shouldn’t lookup to clog thanks to hint bits.  As expected
+it appears that clog buffers don’t really affect read-only performance directly,
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=5364b357">5364b357</a> just changed layout of shared
+memory structures.</p>
+
+<p>It appears that read-only benchmark became very sensitive to layout of shared
+memory structures. As result performance has significant variety depending on
+shared_buffers, max_connections and other options which influence shared memory
+distribution.  When I gave Andres access to that big machine, he very quickly
+find a way to take care about performance irregularity:
+<a href="http://www.postgresql.org/message-id/20160411214029.ce3fw6zxim5k6a2r@alap3.anarazel.de">make all PGXACTs full cacheline aligned</a>.
+Without this patch SnapshotResetXmin() dirties processor cache containing
+multiple PGXACTs.  With this patch SnapshotResetXmin() dirties cacheline with
+only single PGXACT.  Thus, GetSnapshotData() have much less cache misses.
+That was surprising and good lesson for me.  I knew that alignment influence
+performance, but I didn’t expect this influence to be so huge. PGXACT cacheline
+alignment issue was discovered after feature freeze for 9.6.  That
+means it would be subject for 9.7 development.  Nevertheless, 9.6 have very
+noticeable scalability improvement.</p>
+
+<p>Therefore, PostgreSQL single instance delivers more than 1 million TPS and one
+could say, that PostgreSQL opens a new era of millions TPS.</p>
+
+<p>P.S. I’d like to thank:</p>
+
+<ul>
+  <li>Andres Freund, so-author and committer of patch;</li>
+  <li>My PostgresPro colleagues: Dmitry Vasilyev who run a lot of benchmarks,
+YUriy Zhuravlev who wrote original proof of concept of this patch;</li>
+  <li>Dilip Kumar and Robert Haas who helped with testing.</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Extensible Access Methods Are Committed to 9.6]]></title>

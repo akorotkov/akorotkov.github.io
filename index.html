@@ -117,6 +117,78 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-05-09T12:50:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon  9 May 2016, 12:50 PM</time>
+        
+      </p>
+    
+    
+      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2016/05/09/scalability-towards-millions-tps/" itemprop="url">PostgreSQL Scalability: Towards Millions of TPS</a></h2>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>PostgreSQL scalability on mulicore and multisocket machines became a subject
+of optimization long time ago once such machines became widely used.
+<a href="http://suckit.blog.hu/2009/09/29/postgresql_history">This blog post</a> shows
+brief history of vertical scalability improvements between versions 8.0 and 8.4.
+PostgreSQL 9.2 had very noticeable scalability improvement.  Thanks to fast
+path locking and other optimizations it becomes possible to achieve
+<a href="http://rhaas.blogspot.ru/2012/04/did-i-say-32-cores-how-about-64.html">more than 350 000 TPS in select-only pgbench test</a>.  The latest stable release PostgreSQL 9.5 also
+contain significant scalability advancements including LWLock improvement which
+allows achieving <a href="http://amitkapila16.blogspot.ru/2015/01/read-scalability-in-postgresql-95.html">about 400 000 TPS in select-only pgbench test</a>.</p>
+
+<p>Postgres Professional company also became involved into scalability
+optimization.  In partnership with IBM we researched PostgreSQL scalability on
+modern Power8 servers.  The results of this research was published in
+<a href="https://habrahabr.ru/company/postgrespro/blog/270827/">popular Russian blog habrahabr</a>
+(<a href="https://translate.google.com/translate?sl=ru&amp;tl=en&amp;js=y&amp;prev=_t&amp;hl=ru&amp;ie=UTF-8&amp;u=https%3A%2F%2Fhabrahabr.ru%2Fcompany%2Fpostgrespro%2Fblog%2F270827%2F&amp;edit-text=&amp;act=url">Google translated version</a>).
+As brief result of this research we identify two ways to improve PostgreSQL
+scalability on Power8:</p>
+
+<ol>
+  <li>Implement Pin/UnpinBuffer() using CAS operations instead of
+buffer header spinlock;</li>
+  <li>Optimize LWLockAttemptLock() in assembly to make fewer loops for changing
+lwlock state.</li>
+</ol>
+
+<p>The optimization #1 appears to give huge benefit on big Intel servers as well,
+while optimization #2 is Power-specific.  After long rounds of optimization,
+cleaning and testing #1 was finally
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=48354581a49c30f5757c203415aa8412d85b0f70">committed by Andres Freund</a>.</p>
+
+<p><img class="no-border 2x center" src="/images/scalability.png" /></p>
+
+</div>
+  
+  
+    <footer>
+      <a class="read-more btn btn-default" href="/blog/2016/05/09/scalability-towards-millions-tps/">Read on &rarr;</a>
+    </footer>
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-04-06T15:26:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Wed  6 Apr 2016,  3:26 PM</time>
         
       </p>
@@ -604,6 +676,8 @@ typing <code>:gdb</code>.</p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/2016/05/09/scalability-towards-millions-tps/">PostgreSQL Scalability: Towards Millions of TPS</a>
+    
     <a class="list-group-item " href="/blog/2016/04/06/extensible-access-methods/">Extensible Access Methods Are Committed to 9.6</a>
     
     <a class="list-group-item " href="/blog/2016/03/25/wait_monitoring_9_6/">Monitoring Wait Events in PostgreSQL 9.6</a>
@@ -611,8 +685,6 @@ typing <code>:gdb</code>.</p>
     <a class="list-group-item " href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/">Pg_pathman UPDATE and DELETE Support and Benchmark</a>
     
     <a class="list-group-item " href="/blog/2016/03/14/pg_pathman-condition-processing/">How Does Pg_pathman Handle Filter Conditions?</a>
-    
-    <a class="list-group-item " href="/blog/2016/03/04/pg_pathman-beta-release/">Pg_pathman Beta Release</a>
     
   </div>
 </section>
@@ -674,7 +746,7 @@ typing <code>:gdb</code>.</p>
 
 <script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
 <script src="/javascripts/modernizr.js"></script>
-
+<script src="/javascripts/retina.js"></script>
 
   </body>
 </html>

@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Extensible Access Methods Are Committed to 9.6 - Alexander Korotkov's blog</title>
+  <title>PostgreSQL Scalability: Towards Millions of TPS - Alexander Korotkov's blog</title>
   <meta name="author" content="Alexander Korotkov">
 
   
@@ -14,15 +14,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/">
+  <link rel="canonical" href="http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps/">
   <link href="/favicon.png" type="image/png" rel="icon">
   <link href="/atom.xml" rel="alternate" title="Alexander Korotkov's blog" type="application/atom+xml">
 
   <!-- http://opengraphprotocol.org/ -->
   <meta name="twitter:card" content="summary_large_image">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/">
-  <meta property="og:title" content="Extensible Access Methods Are Committed to 9.6 - Alexander Korotkov's blog">
+  <meta property="og:url" content="http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps/">
+  <meta property="og:title" content="PostgreSQL Scalability: Towards Millions of TPS - Alexander Korotkov's blog">
   
 
   <script src="/javascripts/libs/jquery/jquery-2.1.3.min.js"></script>
@@ -113,83 +113,97 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-04-06T15:26:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Wed  6 Apr 2016,  3:26 PM</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-05-09T12:50:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon  9 May 2016, 12:50 PM</time>
         
       </p>
     
     
     <h1 class="entry-title" itemprop="name headline">
-        Extensible Access Methods Are Committed to 9.6
+        PostgreSQL Scalability: Towards Millions of TPS
         
     </h1>
     
   </header>
 
 
-<div class="entry-content clearfix" itemprop="articleBody description"><p>PostgreSQL 9.6 receives suitable support of extensible index access methods.
-And that’s good news because Postgres was initially designed to support it.</p>
+<div class="entry-content clearfix" itemprop="articleBody description"><p>PostgreSQL scalability on mulicore and multisocket machines became a subject
+of optimization long time ago once such machines became widely used.
+<a href="http://suckit.blog.hu/2009/09/29/postgresql_history">This blog post</a> shows
+brief history of vertical scalability improvements between versions 8.0 and 8.4.
+PostgreSQL 9.2 had very noticeable scalability improvement.  Thanks to fast
+path locking and other optimizations it becomes possible to achieve
+<a href="http://rhaas.blogspot.ru/2012/04/did-i-say-32-cores-how-about-64.html">more than 350 000 TPS in select-only pgbench test</a>.  The latest stable release PostgreSQL 9.5 also
+contain significant scalability advancements including LWLock improvement which
+allows achieving <a href="http://amitkapila16.blogspot.ru/2015/01/read-scalability-in-postgresql-95.html">about 400 000 TPS in select-only pgbench test</a>.</p>
 
-<blockquote>
-  <p>“It is imperative that a user be able to construct new access methods to 
-provide efficient access to instances of nontraditional base types”</p>
+<p>Postgres Professional company also became involved into scalability
+optimization.  In partnership with IBM we researched PostgreSQL scalability on
+modern Power8 servers.  The results of this research was published in
+<a href="https://habrahabr.ru/company/postgrespro/blog/270827/">popular Russian blog habrahabr</a>
+(<a href="https://translate.google.com/translate?sl=ru&amp;tl=en&amp;js=y&amp;prev=_t&amp;hl=ru&amp;ie=UTF-8&amp;u=https%3A%2F%2Fhabrahabr.ru%2Fcompany%2Fpostgrespro%2Fblog%2F270827%2F&amp;edit-text=&amp;act=url">Google translated version</a>).
+As brief result of this research we identify two ways to improve PostgreSQL
+scalability on Power8:</p>
 
-  <p>Michael Stonebraker, Jeff Anton, Michael Hirohama.
-Extendability in POSTGRES , IEEE Data Eng. Bull. 10 (2) pp.16-23, 1987</p>
-</blockquote>
+<ol>
+  <li>Implement Pin/UnpinBuffer() using CAS operations instead of
+buffer header spinlock;</li>
+  <li>Optimize LWLockAttemptLock() in assembly to make fewer loops for changing
+lwlock state.</li>
+</ol>
 
-<p>That was a huge work which consists of multiple steps.</p>
+<p>The optimization #1 appears to give huge benefit on big Intel servers as well,
+while optimization #2 is Power-specific.  After long rounds of optimization,
+cleaning and testing #1 was finally
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=48354581a49c30f5757c203415aa8412d85b0f70">committed by Andres Freund</a>.</p>
+
+<p><img class="no-border 2x center" src="/images/scalability.png" /></p>
 
 <!--more-->
 
+<p>On the graph above, following PostgreSQL versions were compared:</p>
+
 <ol>
-  <li>Rework access method interface so that access method internals are hidden
-from SQL level to C level.  Besides help for custom access methods support,
-this refactoring is good by itself.<br />
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=65c5fcd353a859da9e61bfb2b92a99f12937de3b">Committed</a>
-by Tom Lane.</li>
-  <li><code>CREATE ACCESS METHOD</code> command which provides legal way for insertion into
-pg_am with support of dependencies and pg_dump/pg_restore.
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=473b93287040b20017cc25a157cffdc5b978c254">Committed</a>
-by Alvaro Herrera.</li>
-  <li>Generic WAL interface which provides custom access methods the way to be
-WAL-logged.  Each built-in access method has its own type of WAL records.
-But custom access method shouldn’t because it could affect reliability.
-Generic WAL records represent difference between pages in general way as
-result of per-byte comparison of original and modified images of the page.
-For sure, it is not as efficient as own type of WAL records, but there is
-no choice under restrictions we have.
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=65578341af1ae50e52e0f45e691ce88ad5a1b9b1">Committed</a>
-by Teodor Sigaev.</li>
-  <li>Bloom contrib module which is example of custom index access method which
-uses generic WAL interface.  This contrib is essential for testing
-infrastructure described above.  Also, this access method could be useful by
-itself.
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=9ee014fc899a28a198492b074e32b60ed8915ea9">Committed</a>
-by Teodor Sigaev.</li>
+  <li>9.5.2 release – peak is 540 000 TPS with 60 clients,</li>
+  <li>9.6 master (more precisely <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=59455018">59455018</a>) – peak is 1 064 000 TPS with
+110 clients,</li>
+  <li>9.6 master where all PGXACTs were full cacheline aligned – peak is
+1 722 000 TPS with 200 clients.</li>
 </ol>
 
-<p>I am very thankful for the efforts of committers and reviewers who make it
-possible to include these features into PostgreSQL.</p>
+<p>Alignment issues worth some explanation.  Initially, I complained performance
+regression introduced by commit <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=5364b357">5364b357</a>
+which increases number of clog buffers.  That was strange by itself, because
+read-only benchmark shouldn’t lookup to clog thanks to hint bits.  As expected
+it appears that clog buffers don’t really affect read-only performance directly,
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=5364b357">5364b357</a> just changed layout of shared
+memory structures.</p>
 
-<p>However, end users don’t really care about this infrastructure.  They do care
-about features we can provide on the base of this infrastructure.  Actually,
-we would be able to have index access methods which are:</p>
+<p>It appears that read-only benchmark became very sensitive to layout of shared
+memory structures. As result performance has significant variety depending on
+shared_buffers, max_connections and other options which influence shared memory
+distribution.  When I gave Andres access to that big machine, he very quickly
+find a way to take care about performance irregularity:
+<a href="http://www.postgresql.org/message-id/20160411214029.ce3fw6zxim5k6a2r@alap3.anarazel.de">make all PGXACTs full cacheline aligned</a>.
+Without this patch SnapshotResetXmin() dirties processor cache containing
+multiple PGXACTs.  With this patch SnapshotResetXmin() dirties cacheline with
+only single PGXACT.  Thus, GetSnapshotData() have much less cache misses.
+That was surprising and good lesson for me.  I knew that alignment influence
+performance, but I didn’t expect this influence to be so huge. PGXACT cacheline
+alignment issue was discovered after feature freeze for 9.6.  That
+means it would be subject for 9.7 development.  Nevertheless, 9.6 have very
+noticeable scalability improvement.</p>
+
+<p>Therefore, PostgreSQL single instance delivers more than 1 million TPS and one
+could say, that PostgreSQL opens a new era of millions TPS.</p>
+
+<p>P.S. I’d like to thank:</p>
 
 <ul>
-  <li>Too hard to add to PostgreSQL core.  For instance, we presented
-<a href="https://wiki.postgresql.org/images/2/25/Full-text_search_in_PostgreSQL_in_milliseconds-extended-version.pdf">fast FTS</a>
-in 2012.  We have 2 of 4 GIN features committed to core.  And it seems to be
-very long way to have rest of features in core.  But since 9.6 we would
-provide it as an extension.</li>
-  <li>Not patent free.  There are some interesting data structures which are
-covered by patents (Fractal Tree index, for example).  This is why they
-couldn’t be added to PostgreSQL core.  Since 9.6, they could be provided
-without fork.</li>
+  <li>Andres Freund, so-author and committer of patch;</li>
+  <li>My PostgresPro colleagues: Dmitry Vasilyev who run a lot of benchmarks,
+YUriy Zhuravlev who wrote original proof of concept of this patch;</li>
+  <li>Dilip Kumar and Robert Haas who helped with testing.</li>
 </ul>
-
-<p>Also, I consider this work as an approach (together with FDW) to pluggable
-storage engines.  I will speak about this during my
-<a href="http://www.pgcon.org/2016/schedule/events/920.en.html">talk at PGCon 2016</a>.</p>
 
 </div>
 
@@ -214,13 +228,13 @@ storage engines.  I will speak about this during my
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-04-06T15:26:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Wed  6 Apr 2016,  3:26 PM</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-05-09T12:50:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon  9 May 2016, 12:50 PM</time>
           
 
 <span class="glyphicon glyphicon-tags"></span>&nbsp;
 <span class="categories">
   
-    <a class='category' href='/blog/categories/am/'>am</a>, <a class='category' href='/blog/categories/bloom/'>bloom</a>, <a class='category' href='/blog/categories/extendability/'>extendability</a>, <a class='category' href='/blog/categories/pg/'>pg</a>
+    <a class='category' href='/blog/categories/benchmark/'>benchmark</a>, <a class='category' href='/blog/categories/buffer-manager/'>buffer manager</a>, <a class='category' href='/blog/categories/pg/'>pg</a>, <a class='category' href='/blog/categories/scalability/'>scalability</a>
   
 </span>
 
@@ -239,10 +253,8 @@ storage engines.  I will speak about this during my
         
           <ul class="meta text-muted pager">
             
-            <li class="previous"><a href="/blog/2016/03/25/wait_monitoring_9_6/" title="Previous Post: Monitoring wait events in PostgreSQL 9.6">&laquo; Monitoring wait events in PostgreSQL 9.6</a></li>
+            <li class="previous"><a href="/blog/2016/04/06/extensible-access-methods/" title="Previous Post: Extensible access methods are committed to 9.6">&laquo; Extensible access methods are committed to 9.6</a></li>
             
-            
-            <li class="next"><a href="/blog/2016/05/09/scalability-towards-millions-tps/" title="Next Post: PostgreSQL scalability: towards millions of TPS">PostgreSQL scalability: towards millions of TPS &raquo;</a></li>
             
           </ul>
         
@@ -267,9 +279,9 @@ storage engines.  I will speak about this during my
   
   <div id="recent_posts" class="list-group">
     
-    <a class="list-group-item " href="/blog/2016/05/09/scalability-towards-millions-tps/">PostgreSQL Scalability: Towards Millions of TPS</a>
+    <a class="list-group-item active" href="/blog/2016/05/09/scalability-towards-millions-tps/">PostgreSQL Scalability: Towards Millions of TPS</a>
     
-    <a class="list-group-item active" href="/blog/2016/04/06/extensible-access-methods/">Extensible Access Methods Are Committed to 9.6</a>
+    <a class="list-group-item " href="/blog/2016/04/06/extensible-access-methods/">Extensible Access Methods Are Committed to 9.6</a>
     
     <a class="list-group-item " href="/blog/2016/03/25/wait_monitoring_9_6/">Monitoring Wait Events in PostgreSQL 9.6</a>
     
@@ -311,8 +323,8 @@ storage engines.  I will speak about this during my
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/';
-        var disqus_url = 'http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/';
+        var disqus_identifier = 'http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps/';
+        var disqus_url = 'http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps/';
         var disqus_script = 'embed.js';
       
     (function () {

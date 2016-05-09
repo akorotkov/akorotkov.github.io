@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps/</loc>
+    <lastmod>2016-05-09T12:50:00+03:00</lastmod>
+  </url>
+  <url>
     <loc>http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/</loc>
     <lastmod>2016-04-06T15:26:00+03:00</lastmod>
   </url>
@@ -93,5 +97,11 @@
   </url>
   <url>
     <loc>http://akorotkov.github.io/blog/categories/bloom/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/scalability/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/buffer-manager/</loc>
   </url>
 </urlset>
