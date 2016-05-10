@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Benchmark | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/benchmark/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-05-09T14:32:08+03:00</updated>
+  <updated>2016-05-10T12:20:33+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -18,7 +18,7 @@
     <link href="http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps/"/>
     <updated>2016-05-09T12:50:00+03:00</updated>
     <id>http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps</id>
-    <content type="html"><![CDATA[<p>PostgreSQL scalability on mulicore and multisocket machines became a subject
+    <content type="html"><![CDATA[<p>PostgreSQL scalability on multicore and multisocket machines became a subject
 of optimization long time ago once such machines became widely used.
 <a href="http://suckit.blog.hu/2009/09/29/postgresql_history">This blog post</a> shows
 brief history of vertical scalability improvements between versions 8.0 and 8.4.
