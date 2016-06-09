@@ -117,6 +117,55 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-06-09T16:45:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Thu  9 Jun 2016,  4:45 PM</time>
+        
+      </p>
+    
+    
+      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2016/06/09/psql-graph/" itemprop="url">Drawing Graphs Directly in Psql</a></h2>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>For people who are actively working with psql, it frequently happens that you
+want to draw graph for the table you’re currently seeing.  Typically, it means a
+cycle of actions including: exporting data, importing it into graph drawing tool
+and drawing graph itself.  It appears that this process could be automated:
+graph could be drawn by typing a single command directly in psql.  See an
+example on the screenshot below.</p>
+
+<p><img class="no-border center" src="/images/screen-psql-iterm-graph.png" width="689" height="958" /></p>
+
+</div>
+  
+  
+    <footer>
+      <a class="read-more btn btn-default" href="/blog/2016/06/09/psql-graph/">Read on &rarr;</a>
+    </footer>
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-05-09T12:50:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon  9 May 2016, 12:50 PM</time>
         
       </p>
@@ -155,9 +204,9 @@ lwlock state.</li>
 <p>The optimization #1 appears to give huge benefit on big Intel servers as well,
 while optimization #2 is Power-specific.  After long rounds of optimization,
 cleaning and testing #1 was finally
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=48354581a49c30f5757c203415aa8412d85b0f70">committed by Andres Freund</a>.</p>
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=48354581">committed by Andres Freund</a>.</p>
 
-<p><img class="no-border 2x center" src="/images/scalability.png" /></p>
+<p><img class="no-border center 2x" src="/images/scalability.png" width="720" height="576" /></p>
 
 </div>
   
@@ -252,12 +301,11 @@ Extendability in POSTGRES , IEEE Data Eng. Bull. 10 (2) pp.16-23, 1987</p>
   </header>
 
 
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Recently Robert Haas
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=53be0b1add7064ca5db3cd884302dfc3268d884e">committed</a>
-which allows seeing some more detailed information about current wait event
-of the process.  In particular, user will be able to see if process is waiting
-for heavyweight lock, lightweight lock (either individual or tranche) or buffer
-pin.  The full list of wait events is available in the
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Recently Robert Haas has <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=53be0b1a">committed</a> a patch which allows
+seeing some more detailed information about current wait event of the process.
+In particular, user will be able to see if process is waiting for heavyweight
+lock, lightweight lock (either individual or tranche) or buffer pin.  The full
+list of wait events is available in the
 <a href="http://www.postgresql.org/docs/devel/static/monitoring-stats.html#WAIT-EVENT-TABLE">documentation</a>.
 Hopefully, it will be more wait events in further releases.</p>
 
@@ -268,7 +316,7 @@ to present <a href="https://github.com/postgrespro/pg_wait_sampling">pg_wait_sam
 which automates gathering sampling statistics of wait events.  pg_wait_sampling
 enables you to gather statistics for graphs like the one below.</p>
 
-<p><img class="no-border" src="/images/wait_monitoring.png" /></p>
+<p><img class="no-border" src="/images/wait_monitoring.png" width="629" height="638" /></p>
 
 </div>
   
@@ -341,7 +389,7 @@ Performance of following operations was compared:</p>
 <p>Benchmarks were done on 2 x Intel Xeon CPU X5675 @ 3.07GHz, 24 GB of memory
 server with fsync = off in 10 threads. See the results below.</p>
 
-<p><img class="no-border" src="/images/pg_pathman_benchmarks.png" /></p>
+<p><img class="no-border" src="/images/pg_pathman_benchmarks.png" width="676" height="445" /></p>
 
 <table>
   <thead>
@@ -420,7 +468,7 @@ server with fsync = off in 10 threads. See the results below.</p>
   </header>
 
 
-  <div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border right" src="/images/filter_data_icon.jpg" /></p>
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border right" src="/images/filter_data_icon.jpg" width="256" height="256" /></p>
 
 <p>In my <a href="/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve
 introduced <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> as an
@@ -476,7 +524,7 @@ with filter conditions while dealing with PostgreSQL inheritance mechanism.</p>
   </header>
 
 
-  <div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border" src="/images/partitiontable.jpg" /></p>
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border" src="/images/partitiontable.jpg" width="640" height="373" /></p>
 
 <p>Partitioning in PostgreSQL is traditionally implemented using <a href="http://www.postgresql.org/docs/9.5/static/ddl-partitioning.html">table
 inheritance</a>.
@@ -485,8 +533,8 @@ Table inheritance allow planner to include into plan only those child tables
 partitions management remains on users: create inherited tables, writing trigger
 which selects appropriate partition for row inserting etc.  In order to automate
 this work pg_partman extension was written.  Also, there is upcoming work on
-<a href="http://www.postgresql.org/message-
-id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a> by Amit Langote for PostgreSQL core.</p>
+<a href="http://www.postgresql.org/message-id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a>
+by Amit Langote for PostgreSQL core.</p>
 
 <p>In Postgres Professional we notice performance problem of inheritance based
 partitioning.  The problem is that planner selects children tables compatible
@@ -634,13 +682,14 @@ psql. Using config line below one can find out backend pid just by typing <code>
 </span><span class="line"><span class="p">(</span><span class="mi">1</span> <span class="k">row</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<p>In 9.6 it becomes possible to even <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=275f05c990c46f8dfe3cb46a3279521bda9e9e27">include backend pid into psql prompt</a>.</p>
+<p>In 9.6 it becomes possible to even
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=275f05c9">include backend pid into psql prompt</a>.</p>
 
 <p>However, it’s possible to automate more complex actions in psql. I’ve configured
 my psql to run gdb attached to current backend in new tab of iTerm2 just by
 typing <code>:gdb</code>.</p>
 
-<p><img class="no-border" src="/images/screen-psql-iterm-gdb.png" /></p>
+<p><img class="no-border" src="/images/screen-psql-iterm-gdb.png" width="494" height="411" /></p>
 
 </div>
   
@@ -676,6 +725,8 @@ typing <code>:gdb</code>.</p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/2016/06/09/psql-graph/">Drawing Graphs Directly in Psql</a>
+    
     <a class="list-group-item " href="/blog/2016/05/09/scalability-towards-millions-tps/">PostgreSQL Scalability: Towards Millions TPS</a>
     
     <a class="list-group-item " href="/blog/2016/04/06/extensible-access-methods/">Extensible Access Methods Are Committed to 9.6</a>
@@ -683,8 +734,6 @@ typing <code>:gdb</code>.</p>
     <a class="list-group-item " href="/blog/2016/03/25/wait_monitoring_9_6/">Monitoring Wait Events in PostgreSQL 9.6</a>
     
     <a class="list-group-item " href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/">Pg_pathman UPDATE and DELETE Support and Benchmark</a>
-    
-    <a class="list-group-item " href="/blog/2016/03/14/pg_pathman-condition-processing/">How Does Pg_pathman Handle Filter Conditions?</a>
     
   </div>
 </section>

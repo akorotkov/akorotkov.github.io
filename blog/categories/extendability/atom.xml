@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Extendability | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/extendability/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-05-10T18:14:51+03:00</updated>
+  <updated>2016-06-09T16:45:13+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -37,12 +37,10 @@ Extendability in POSTGRES , IEEE Data Eng. Bull. 10 (2) pp.16-23, 1987</p>
   <li>Rework access method interface so that access method internals are hidden
 from SQL level to C level.  Besides help for custom access methods support,
 this refactoring is good by itself.<br />
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=65c5fcd353a859da9e61bfb2b92a99f12937de3b">Committed</a>
-by Tom Lane.</li>
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=65c5fcd3">Committed</a> by Tom Lane.</li>
   <li><code>CREATE ACCESS METHOD</code> command which provides legal way for insertion into
 pg_am with support of dependencies and pg_dump/pg_restore.
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=473b93287040b20017cc25a157cffdc5b978c254">Committed</a>
-by Alvaro Herrera.</li>
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=473b9328">Committed</a> by Alvaro Herrera.</li>
   <li>Generic WAL interface which provides custom access methods the way to be
 WAL-logged.  Each built-in access method has its own type of WAL records.
 But custom access method shouldn’t because it could affect reliability.
@@ -50,14 +48,12 @@ Generic WAL records represent difference between pages in general way as
 result of per-byte comparison of original and modified images of the page.
 For sure, it is not as efficient as own type of WAL records, but there is
 no choice under restrictions we have.
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=65578341af1ae50e52e0f45e691ce88ad5a1b9b1">Committed</a>
-by Teodor Sigaev.</li>
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=65578341">Committed</a> by Teodor Sigaev.</li>
   <li>Bloom contrib module which is example of custom index access method which
 uses generic WAL interface.  This contrib is essential for testing
 infrastructure described above.  Also, this access method could be useful by
 itself.
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=9ee014fc899a28a198492b074e32b60ed8915ea9">Committed</a>
-by Teodor Sigaev.</li>
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=9ee014fc">Committed</a> by Teodor Sigaev.</li>
 </ol>
 
 <p>I am very thankful for the efforts of committers and reviewers who make it

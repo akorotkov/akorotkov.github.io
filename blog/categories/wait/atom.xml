@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Wait | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/wait/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-05-10T18:14:51+03:00</updated>
+  <updated>2016-06-09T16:45:13+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -18,12 +18,11 @@
     <link href="http://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6/"/>
     <updated>2016-03-25T18:00:00+03:00</updated>
     <id>http://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6</id>
-    <content type="html"><![CDATA[<p>Recently Robert Haas
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=53be0b1add7064ca5db3cd884302dfc3268d884e">committed</a>
-which allows seeing some more detailed information about current wait event
-of the process.  In particular, user will be able to see if process is waiting
-for heavyweight lock, lightweight lock (either individual or tranche) or buffer
-pin.  The full list of wait events is available in the
+    <content type="html"><![CDATA[<p>Recently Robert Haas has <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=53be0b1a">committed</a> a patch which allows
+seeing some more detailed information about current wait event of the process.
+In particular, user will be able to see if process is waiting for heavyweight
+lock, lightweight lock (either individual or tranche) or buffer pin.  The full
+list of wait events is available in the
 <a href="http://www.postgresql.org/docs/devel/static/monitoring-stats.html#WAIT-EVENT-TABLE">documentation</a>.
 Hopefully, it will be more wait events in further releases.</p>
 
@@ -34,7 +33,7 @@ to present <a href="https://github.com/postgrespro/pg_wait_sampling">pg_wait_sam
 which automates gathering sampling statistics of wait events.  pg_wait_sampling
 enables you to gather statistics for graphs like the one below.</p>
 
-<p><img class="no-border" src="/images/wait_monitoring.png"></p>
+<p><img class="no-border" src="/images/wait_monitoring.png" width="629" height="638"></p>
 
 <!--more-->
 

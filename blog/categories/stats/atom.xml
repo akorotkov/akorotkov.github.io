@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Stats | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/stats/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-05-10T18:14:51+03:00</updated>
+  <updated>2016-06-09T16:45:13+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -167,7 +167,7 @@ the information about order in e-commerce.</p>
 <span class='line-number'>19</span>
 <span class='line-number'>20</span>
 <span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='Json'><span class='line'><span class="p">{</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
 </span><span class='line'>  <span class="err">“id”:</span> <span class="err">1,</span>
 </span><span class='line'>  <span class="err">“contact”:</span> <span class="err">“John</span> <span class="err">Smith”,</span>
 </span><span class='line'>  <span class="err">“phone”:</span> <span class="err">“212</span> <span class="err">555-1234”,</span>
@@ -355,7 +355,7 @@ a key.</p>
 <span class='line-number'>19</span>
 <span class='line-number'>20</span>
 <span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='Json'><span class='line'><span class="p">{</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
 </span><span class='line'>  <span class="err">“id”:</span> <span class="err">1,</span>
 </span><span class='line'>  <span class="err">“contact”:</span> <span class="err">“John</span> <span class="err">Smith”,</span>
 </span><span class='line'>  <span class="err">“phone”:</span> <span class="err">“212</span> <span class="err">555-1234”,</span>

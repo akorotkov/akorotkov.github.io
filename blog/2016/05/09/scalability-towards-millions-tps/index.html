@@ -154,9 +154,9 @@ lwlock state.</li>
 <p>The optimization #1 appears to give huge benefit on big Intel servers as well,
 while optimization #2 is Power-specific.  After long rounds of optimization,
 cleaning and testing #1 was finally
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=48354581a49c30f5757c203415aa8412d85b0f70">committed by Andres Freund</a>.</p>
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=48354581">committed by Andres Freund</a>.</p>
 
-<p><img class="no-border 2x center" src="/images/scalability.png" /></p>
+<p><img class="no-border center 2x" src="/images/scalability.png" width="720" height="576" /></p>
 
 <!--more-->
 
@@ -164,19 +164,18 @@ cleaning and testing #1 was finally
 
 <ol>
   <li>9.5.2 release – peak is 540 000 TPS with 60 clients,</li>
-  <li>9.6 master (more precisely <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=59455018">59455018</a>) – peak is 1 064 000 TPS with
-110 clients,</li>
+  <li>9.6 master (more precisely <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=59455018">59455018</a>) – peak is 1 064 000 TPS
+with 110 clients,</li>
   <li>9.6 master where all PGXACTs were full cacheline aligned – peak is
 1 722 000 TPS with 200 clients.</li>
 </ol>
 
 <p>Alignment issues worth some explanation.  Initially, I complained performance
-regression introduced by commit <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=5364b357">5364b357</a>
-which increases number of clog buffers.  That was strange by itself, because
-read-only benchmark shouldn’t lookup to clog thanks to hint bits.  As expected
-it appears that clog buffers don’t really affect read-only performance directly,
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=5364b357">5364b357</a> just changed layout of shared
-memory structures.</p>
+regression introduced by commit <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=5364b357">5364b357</a> which increases number of
+clog buffers.  That was strange by itself, because read-only benchmark shouldn’t
+lookup to clog thanks to hint bits.  As expected it appears that clog buffers
+don’t really affect read-only performance directly, <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=5364b357">5364b357</a> just
+changed layout of shared memory structures.</p>
 
 <p>It appears that read-only benchmark became very sensitive to layout of shared
 memory structures. As result performance has significant variety depending on
@@ -256,6 +255,8 @@ YUriy Zhuravlev who wrote original proof of concept of this patch;</li>
             <li class="previous"><a href="/blog/2016/04/06/extensible-access-methods/" title="Previous Post: Extensible access methods are committed to 9.6">&laquo; Extensible access methods are committed to 9.6</a></li>
             
             
+            <li class="next"><a href="/blog/2016/06/09/psql-graph/" title="Next Post: Drawing graphs directly in psql">Drawing graphs directly in psql &raquo;</a></li>
+            
           </ul>
         
       </footer>
@@ -279,6 +280,8 @@ YUriy Zhuravlev who wrote original proof of concept of this patch;</li>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/2016/06/09/psql-graph/">Drawing Graphs Directly in Psql</a>
+    
     <a class="list-group-item active" href="/blog/2016/05/09/scalability-towards-millions-tps/">PostgreSQL Scalability: Towards Millions TPS</a>
     
     <a class="list-group-item " href="/blog/2016/04/06/extensible-access-methods/">Extensible Access Methods Are Committed to 9.6</a>
@@ -286,8 +289,6 @@ YUriy Zhuravlev who wrote original proof of concept of this patch;</li>
     <a class="list-group-item " href="/blog/2016/03/25/wait_monitoring_9_6/">Monitoring Wait Events in PostgreSQL 9.6</a>
     
     <a class="list-group-item " href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/">Pg_pathman UPDATE and DELETE Support and Benchmark</a>
-    
-    <a class="list-group-item " href="/blog/2016/03/14/pg_pathman-condition-processing/">How Does Pg_pathman Handle Filter Conditions?</a>
     
   </div>
 </section>

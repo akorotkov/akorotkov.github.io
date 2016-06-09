@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Filter | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/filter/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-05-10T18:14:51+03:00</updated>
+  <updated>2016-06-09T16:45:13+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -18,7 +18,7 @@
     <link href="http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/"/>
     <updated>2016-03-14T11:10:00+03:00</updated>
     <id>http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing</id>
-    <content type="html"><![CDATA[<p><img class="no-border right" src="/images/filter_data_icon.jpg"></p>
+    <content type="html"><![CDATA[<p><img class="no-border right" src="/images/filter_data_icon.jpg" width="256" height="256"></p>
 
 <p>In my <a href="/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve
 introduced <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> as an
@@ -183,7 +183,7 @@ of transformation really exists.</p>
 '2015-02-01' AND ts &lt; '2015-03-15') OR (ts &gt;= '2015-05-15' AND ts &lt;
 '2015-07-01')</code> have following tree representation.</p>
 
-<p><img class="no-border center" src="/images/pg_pathman_condition_1.png"></p>
+<p><img class="no-border center" src="/images/pg_pathman_condition_1.png" width="483" height="123"></p>
 
 <p>Leaf nodes of tree are simple conditions.  Non-leaf nodes are logical operators
 which forms complex conditions.  For particular partition each filter condition
@@ -211,7 +211,7 @@ instance, condition <code>ts &lt;= '2015-02-01'</code> is always false for parti
 is treated against each partition.  These vectors could be filled upwards: for
 leaf nodes first, and then for non-leaf nodes using tri-state logic.</p>
 
-<p><img class="no-border center" src="/images/pg_pathman_condition_2.png"></p>
+<p><img class="no-border center" src="/images/pg_pathman_condition_2.png" width="543" height="144"></p>
 
 <p>It’s evident that only conditions which could be either true or false (m) are
 useful for filtering.  Conditions which are always true or always false
@@ -231,7 +231,7 @@ is true. So, scan it without filter.</p>
     <p>For <code>ts &gt;= 2015-03-01 AND ts &lt; 2015-04-01</code> partition, filter condition tree
 would be reduced into following tree.</p>
 
-    <p><img class="no-border center" src="/images/pg_pathman_condition_3.png"></p>
+    <p><img class="no-border center" src="/images/pg_pathman_condition_3.png" width="123" height="103"></p>
 
     <p>Therefore, this partition will be scan with <code>ts &lt; '2015-03-15'</code> filter.</p>
   </li>
@@ -243,7 +243,7 @@ is false. So, skip it.</p>
     <p>For <code>ts &gt;= 2015-05-01 AND ts &lt; 2015-06-01</code> partition, filter condition tree
 would be reduced into following tree.</p>
 
-    <p><img class="no-border center" src="/images/pg_pathman_condition_4.png"></p>
+    <p><img class="no-border center" src="/images/pg_pathman_condition_4.png" width="123" height="103"></p>
 
     <p>Therefore, this partition will be scan with <code>ts &gt;= '2015-05-15'</code> filter.</p>
   </li>

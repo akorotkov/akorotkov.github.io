@@ -4,7 +4,7 @@
   <title><![CDATA[Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-05-10T18:14:51+03:00</updated>
+  <updated>2016-06-09T16:45:13+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -12,6 +12,50 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Drawing Graphs Directly in Psql]]></title>
+    <link href="http://akorotkov.github.io/blog/2016/06/09/psql-graph/"/>
+    <updated>2016-06-09T16:45:00+03:00</updated>
+    <id>http://akorotkov.github.io/blog/2016/06/09/psql-graph</id>
+    <content type="html"><![CDATA[<p>For people who are actively working with psql, it frequently happens that you
+want to draw graph for the table you’re currently seeing.  Typically, it means a
+cycle of actions including: exporting data, importing it into graph drawing tool
+and drawing graph itself.  It appears that this process could be automated:
+graph could be drawn by typing a single command directly in psql.  See an
+example on the screenshot below.</p>
+
+<p><img class="no-border center" src="http://akorotkov.github.io/images/screen-psql-iterm-graph.png" width="689" height="958" /></p>
+
+<!--more-->
+
+<p>It might seem like a magic, but actually there is absolutely no magic.  iTerm2
+supports <a href="https://www.iterm2.com/documentation-images.html">image inlining</a>
+since version 3 which is currently beta.  Thus, if we put image surrounded
+with corresponding escape sequences it will appear in the terminal.  From psql
+side we need to redirect output to the script which would do it.  We can define
+a macro for simplifying this like in <a href="http://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach/">one of my previous posts</a>.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="err">\</span><span class="k">set</span> <span class="n">graph</span> <span class="s1">&#39;\\g |pg_graph&#39;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>And finally we need a pg_graph script which parses psql output, draws graph and
+puts it into stdout.  I <a href="https://gist.github.com/akorotkov/2c7011ac30de27b9c5631f1bf418f0a1">wrote one</a>
+using Python and matplotlib.  It recognizes first column as series of X-values
+and rest of columns as series of Y-values.  If first column contains only
+decimal values it draws a plot chart, otherwise it draws a bar chart.</p>
+
+<p>Thereby, it’s not hard to teach psql to do more things.  Also, we can consider
+some improvements to psql including:</p>
+
+<ul>
+  <li>Add output format option for <code>\g</code> which would make it easier to parse psql
+output from scripts;</li>
+  <li>Provide elegant way to pass parameters into psql macro.</li>
+</ul>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[PostgreSQL Scalability: Towards Millions TPS]]></title>
@@ -46,9 +90,9 @@ lwlock state.</li>
 <p>The optimization #1 appears to give huge benefit on big Intel servers as well,
 while optimization #2 is Power-specific.  After long rounds of optimization,
 cleaning and testing #1 was finally
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=48354581a49c30f5757c203415aa8412d85b0f70">committed by Andres Freund</a>.</p>
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=48354581">committed by Andres Freund</a>.</p>
 
-<p><img class="no-border 2x center" src="http://akorotkov.github.io/images/scalability.png" /></p>
+<p><img class="no-border center 2x" src="http://akorotkov.github.io/images/scalability.png" width="720" height="576" /></p>
 
 <!--more-->
 
@@ -56,19 +100,18 @@ cleaning and testing #1 was finally
 
 <ol>
   <li>9.5.2 release – peak is 540 000 TPS with 60 clients,</li>
-  <li>9.6 master (more precisely <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=59455018">59455018</a>) – peak is 1 064 000 TPS with
-110 clients,</li>
+  <li>9.6 master (more precisely <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=59455018">59455018</a>) – peak is 1 064 000 TPS
+with 110 clients,</li>
   <li>9.6 master where all PGXACTs were full cacheline aligned – peak is
 1 722 000 TPS with 200 clients.</li>
 </ol>
 
 <p>Alignment issues worth some explanation.  Initially, I complained performance
-regression introduced by commit <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=5364b357">5364b357</a>
-which increases number of clog buffers.  That was strange by itself, because
-read-only benchmark shouldn’t lookup to clog thanks to hint bits.  As expected
-it appears that clog buffers don’t really affect read-only performance directly,
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=5364b357">5364b357</a> just changed layout of shared
-memory structures.</p>
+regression introduced by commit <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=5364b357">5364b357</a> which increases number of
+clog buffers.  That was strange by itself, because read-only benchmark shouldn’t
+lookup to clog thanks to hint bits.  As expected it appears that clog buffers
+don’t really affect read-only performance directly, <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=5364b357">5364b357</a> just
+changed layout of shared memory structures.</p>
 
 <p>It appears that read-only benchmark became very sensitive to layout of shared
 memory structures. As result performance has significant variety depending on
@@ -124,12 +167,10 @@ Extendability in POSTGRES , IEEE Data Eng. Bull. 10 (2) pp.16-23, 1987</p>
   <li>Rework access method interface so that access method internals are hidden
 from SQL level to C level.  Besides help for custom access methods support,
 this refactoring is good by itself.<br />
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=65c5fcd353a859da9e61bfb2b92a99f12937de3b">Committed</a>
-by Tom Lane.</li>
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=65c5fcd3">Committed</a> by Tom Lane.</li>
   <li><code>CREATE ACCESS METHOD</code> command which provides legal way for insertion into
 pg_am with support of dependencies and pg_dump/pg_restore.
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=473b93287040b20017cc25a157cffdc5b978c254">Committed</a>
-by Alvaro Herrera.</li>
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=473b9328">Committed</a> by Alvaro Herrera.</li>
   <li>Generic WAL interface which provides custom access methods the way to be
 WAL-logged.  Each built-in access method has its own type of WAL records.
 But custom access method shouldn’t because it could affect reliability.
@@ -137,14 +178,12 @@ Generic WAL records represent difference between pages in general way as
 result of per-byte comparison of original and modified images of the page.
 For sure, it is not as efficient as own type of WAL records, but there is
 no choice under restrictions we have.
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=65578341af1ae50e52e0f45e691ce88ad5a1b9b1">Committed</a>
-by Teodor Sigaev.</li>
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=65578341">Committed</a> by Teodor Sigaev.</li>
   <li>Bloom contrib module which is example of custom index access method which
 uses generic WAL interface.  This contrib is essential for testing
 infrastructure described above.  Also, this access method could be useful by
 itself.
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=9ee014fc899a28a198492b074e32b60ed8915ea9">Committed</a>
-by Teodor Sigaev.</li>
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=9ee014fc">Committed</a> by Teodor Sigaev.</li>
 </ol>
 
 <p>I am very thankful for the efforts of committers and reviewers who make it
@@ -178,12 +217,11 @@ storage engines.  I will speak about this during my
     <link href="http://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6/"/>
     <updated>2016-03-25T18:00:00+03:00</updated>
     <id>http://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6</id>
-    <content type="html"><![CDATA[<p>Recently Robert Haas
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commit;h=53be0b1add7064ca5db3cd884302dfc3268d884e">committed</a>
-which allows seeing some more detailed information about current wait event
-of the process.  In particular, user will be able to see if process is waiting
-for heavyweight lock, lightweight lock (either individual or tranche) or buffer
-pin.  The full list of wait events is available in the
+    <content type="html"><![CDATA[<p>Recently Robert Haas has <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=53be0b1a">committed</a> a patch which allows
+seeing some more detailed information about current wait event of the process.
+In particular, user will be able to see if process is waiting for heavyweight
+lock, lightweight lock (either individual or tranche) or buffer pin.  The full
+list of wait events is available in the
 <a href="http://www.postgresql.org/docs/devel/static/monitoring-stats.html#WAIT-EVENT-TABLE">documentation</a>.
 Hopefully, it will be more wait events in further releases.</p>
 
@@ -194,7 +232,7 @@ to present <a href="https://github.com/postgrespro/pg_wait_sampling">pg_wait_sam
 which automates gathering sampling statistics of wait events.  pg_wait_sampling
 enables you to gather statistics for graphs like the one below.</p>
 
-<p><img class="no-border" src="http://akorotkov.github.io/images/wait_monitoring.png" /></p>
+<p><img class="no-border" src="http://akorotkov.github.io/images/wait_monitoring.png" width="629" height="638" /></p>
 
 <!--more-->
 
@@ -405,7 +443,7 @@ Performance of following operations was compared:</p>
 <p>Benchmarks were done on 2 x Intel Xeon CPU X5675 @ 3.07GHz, 24 GB of memory
 server with fsync = off in 10 threads. See the results below.</p>
 
-<p><img class="no-border" src="http://akorotkov.github.io/images/pg_pathman_benchmarks.png" /></p>
+<p><img class="no-border" src="http://akorotkov.github.io/images/pg_pathman_benchmarks.png" width="676" height="445" /></p>
 
 <table>
   <thead>
@@ -488,7 +526,7 @@ a great extension which has served many years.</p>
     <link href="http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/"/>
     <updated>2016-03-14T11:10:00+03:00</updated>
     <id>http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing</id>
-    <content type="html"><![CDATA[<p><img class="no-border right" src="http://akorotkov.github.io/images/filter_data_icon.jpg" /></p>
+    <content type="html"><![CDATA[<p><img class="no-border right" src="http://akorotkov.github.io/images/filter_data_icon.jpg" width="256" height="256" /></p>
 
 <p>In my <a href="http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve
 introduced <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> as an
@@ -653,7 +691,7 @@ of transformation really exists.</p>
 '2015-02-01' AND ts &lt; '2015-03-15') OR (ts &gt;= '2015-05-15' AND ts &lt;
 '2015-07-01')</code> have following tree representation.</p>
 
-<p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_1.png" /></p>
+<p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_1.png" width="483" height="123" /></p>
 
 <p>Leaf nodes of tree are simple conditions.  Non-leaf nodes are logical operators
 which forms complex conditions.  For particular partition each filter condition
@@ -681,7 +719,7 @@ instance, condition <code>ts &lt;= '2015-02-01'</code> is always false for parti
 is treated against each partition.  These vectors could be filled upwards: for
 leaf nodes first, and then for non-leaf nodes using tri-state logic.</p>
 
-<p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_2.png" /></p>
+<p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_2.png" width="543" height="144" /></p>
 
 <p>It’s evident that only conditions which could be either true or false (m) are
 useful for filtering.  Conditions which are always true or always false
@@ -701,7 +739,7 @@ is true. So, scan it without filter.</p>
     <p>For <code>ts &gt;= 2015-03-01 AND ts &lt; 2015-04-01</code> partition, filter condition tree
 would be reduced into following tree.</p>
 
-    <p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_3.png" /></p>
+    <p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_3.png" width="123" height="103" /></p>
 
     <p>Therefore, this partition will be scan with <code>ts &lt; '2015-03-15'</code> filter.</p>
   </li>
@@ -713,7 +751,7 @@ is false. So, skip it.</p>
     <p>For <code>ts &gt;= 2015-05-01 AND ts &lt; 2015-06-01</code> partition, filter condition tree
 would be reduced into following tree.</p>
 
-    <p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_4.png" /></p>
+    <p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_4.png" width="123" height="103" /></p>
 
     <p>Therefore, this partition will be scan with <code>ts &gt;= '2015-05-15'</code> filter.</p>
   </li>
@@ -738,7 +776,7 @@ sharing a feedback.</p>
     <link href="http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/"/>
     <updated>2016-03-04T17:10:00+03:00</updated>
     <id>http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release</id>
-    <content type="html"><![CDATA[<p><img class="no-border" src="http://akorotkov.github.io/images/partitiontable.jpg" /></p>
+    <content type="html"><![CDATA[<p><img class="no-border" src="http://akorotkov.github.io/images/partitiontable.jpg" width="640" height="373" /></p>
 
 <p>Partitioning in PostgreSQL is traditionally implemented using <a href="http://www.postgresql.org/docs/9.5/static/ddl-partitioning.html">table
 inheritance</a>.
@@ -747,8 +785,8 @@ Table inheritance allow planner to include into plan only those child tables
 partitions management remains on users: create inherited tables, writing trigger
 which selects appropriate partition for row inserting etc.  In order to automate
 this work pg_partman extension was written.  Also, there is upcoming work on
-<a href="http://www.postgresql.org/message-
-id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a> by Amit Langote for PostgreSQL core.</p>
+<a href="http://www.postgresql.org/message-id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a>
+by Amit Langote for PostgreSQL core.</p>
 
 <p>In Postgres Professional we notice performance problem of inheritance based
 partitioning.  The problem is that planner selects children tables compatible
@@ -946,7 +984,7 @@ the information about order in e-commerce.</p>
 <span class="line-number">19</span>
 <span class="line-number">20</span>
 <span class="line-number">21</span>
-</pre></td><td class="code"><pre><code class="Json"><span class="line"><span class="p">{</span>
+</pre></td><td class="code"><pre><code class="json"><span class="line"><span class="p">{</span>
 </span><span class="line">  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
 </span><span class="line">  <span class="nt">&quot;contact&quot;</span><span class="p">:</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span>
 </span><span class="line">  <span class="nt">&quot;phone&quot;</span><span class="p">:</span> <span class="s2">&quot;212 555-1234&quot;</span><span class="p">,</span>
@@ -1138,7 +1176,7 @@ a key.</p>
 </pre></td></tr></table></div></figure></notextile></div>
   </li>
 </ul>
-<p>&lt;/pre&gt;&lt;/td&gt;&lt;td class='code'&gt;&lt;pre&gt;<code class="Json"><span class="line"><span class="p">{</span>
+<p>&lt;/pre&gt;&lt;/td&gt;&lt;td class='code'&gt;&lt;pre&gt;<code class="json"><span class="line"><span class="p">{</span>
 </span><span class="line">  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
 </span><span class="line">  <span class="nt">&quot;contact&quot;</span><span class="p">:</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span>
 </span><span class="line">  <span class="nt">&quot;phone&quot;</span><span class="p">:</span> <span class="s2">&quot;212 555-1234&quot;</span><span class="p">,</span>
@@ -1230,13 +1268,14 @@ psql. Using config line below one can find out backend pid just by typing <code>
 </span><span class="line"><span class="p">(</span><span class="mi">1</span> <span class="k">row</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<p>In 9.6 it becomes possible to even <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=275f05c990c46f8dfe3cb46a3279521bda9e9e27">include backend pid into psql prompt</a>.</p>
+<p>In 9.6 it becomes possible to even
+<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=275f05c9">include backend pid into psql prompt</a>.</p>
 
 <p>However, it’s possible to automate more complex actions in psql. I’ve configured
 my psql to run gdb attached to current backend in new tab of iTerm2 just by
 typing <code>:gdb</code>.</p>
 
-<p><img class="no-border" src="http://akorotkov.github.io/images/screen-psql-iterm-gdb.png" /></p>
+<p><img class="no-border" src="http://akorotkov.github.io/images/screen-psql-iterm-gdb.png" width="494" height="411" /></p>
 
 <!--more-->
 

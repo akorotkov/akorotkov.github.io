@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://akorotkov.github.io/blog/2016/06/09/psql-graph/</loc>
+    <lastmod>2016-06-09T16:45:00+03:00</lastmod>
+  </url>
+  <url>
     <loc>http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps/</loc>
     <lastmod>2016-05-09T12:50:00+03:00</lastmod>
   </url>
@@ -103,5 +107,11 @@
   </url>
   <url>
     <loc>http://akorotkov.github.io/blog/categories/buffer-manager/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/graph/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/iterm/</loc>
   </url>
 </urlset>

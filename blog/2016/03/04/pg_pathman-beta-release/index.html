@@ -126,7 +126,7 @@
   </header>
 
 
-<div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border" src="/images/partitiontable.jpg" /></p>
+<div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border" src="/images/partitiontable.jpg" width="640" height="373" /></p>
 
 <p>Partitioning in PostgreSQL is traditionally implemented using <a href="http://www.postgresql.org/docs/9.5/static/ddl-partitioning.html">table
 inheritance</a>.
@@ -135,8 +135,8 @@ Table inheritance allow planner to include into plan only those child tables
 partitions management remains on users: create inherited tables, writing trigger
 which selects appropriate partition for row inserting etc.  In order to automate
 this work pg_partman extension was written.  Also, there is upcoming work on
-<a href="http://www.postgresql.org/message-
-id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a> by Amit Langote for PostgreSQL core.</p>
+<a href="http://www.postgresql.org/message-id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a>
+by Amit Langote for PostgreSQL core.</p>
 
 <p>In Postgres Professional we notice performance problem of inheritance based
 partitioning.  The problem is that planner selects children tables compatible
@@ -250,6 +250,8 @@ infrastructure and fulfill it with effective internal algorithms.</p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/2016/06/09/psql-graph/">Drawing Graphs Directly in Psql</a>
+    
     <a class="list-group-item " href="/blog/2016/05/09/scalability-towards-millions-tps/">PostgreSQL Scalability: Towards Millions TPS</a>
     
     <a class="list-group-item " href="/blog/2016/04/06/extensible-access-methods/">Extensible Access Methods Are Committed to 9.6</a>
@@ -257,8 +259,6 @@ infrastructure and fulfill it with effective internal algorithms.</p>
     <a class="list-group-item " href="/blog/2016/03/25/wait_monitoring_9_6/">Monitoring Wait Events in PostgreSQL 9.6</a>
     
     <a class="list-group-item " href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/">Pg_pathman UPDATE and DELETE Support and Benchmark</a>
-    
-    <a class="list-group-item " href="/blog/2016/03/14/pg_pathman-condition-processing/">How Does Pg_pathman Handle Filter Conditions?</a>
     
   </div>
 </section>
