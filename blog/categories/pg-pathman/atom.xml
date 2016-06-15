@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Pg_pathman | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/pg-pathman/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-06-09T16:45:13+03:00</updated>
+  <updated>2016-06-15T14:59:07+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -12,6 +12,129 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[RuntimeAppend in Pg_pathman: Achievements and New Challenges]]></title>
+    <link href="http://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append/"/>
+    <updated>2016-06-15T15:00:00+03:00</updated>
+    <id>http://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append</id>
+    <content type="html"><![CDATA[<p>Dealing with partitioned tables we can’t always select relevant partitions
+during query planning.  Naturally, during query planning you can’t know values
+which come from subquery or outer part of nested loop join.  Nevertheless, it
+would be ridiculous to scan all the partitions in such cases.</p>
+
+<p>This is why my Postgres Professional colleague Dmitry Ivanov developed a
+new custom executor node for pg_pathman: RuntimeAppend.  This node behaves
+like regular Append node: it contains set of children Nodes which should be
+appended.  However, RuntimeAppend have one distinction: each run it selects
+only relevant children to append basing on parameter values.</p>
+
+<!--more-->
+
+<p>Let’s consider example: join of <code>journal</code> table which contains row per each
+30 seconds of year partitioned by day, and <code>q</code> table which refers 1000 random
+rows of <code>journal</code> table.  Without RuntimeAppend optimizer selects Hash Join
+plan.</p>
+
+<p><code>sql Regular Append: Hash Join
+# EXPLAIN ANALYZE SELECT * FROM q JOIN journal j ON q.dt = j.dt;
+                                                          QUERY PLAN
+-------------------------------------------------------------------------------------------------------------------------------
+ Hash Join  (cost=27.50..25442.51 rows=1000 width=56) (actual time=0.479..252.506 rows=1000 loops=1)
+   Hash Cond: (j.dt = q.dt)
+   -&gt;  Append  (cost=0.00..21463.01 rows=1051201 width=49) (actual time=0.005..152.258 rows=1051201 loops=1)
+         -&gt;  Seq Scan on journal_1 j  (cost=0.00..58.80 rows=2880 width=49) (actual time=0.004..0.247 rows=2880 loops=1)
+         -&gt;  Seq Scan on journal_2 j_1  (cost=0.00..58.80 rows=2880 width=49) (actual time=0.001..0.208 rows=2880 loops=1)
+         -&gt;  Seq Scan on journal_3 j_2  (cost=0.00..58.80 rows=2880 width=49) (actual time=0.001..0.197 rows=2880 loops=1)
+...............................................................................................................................
+         -&gt;  Seq Scan on journal_366 j_365  (cost=0.00..1.01 rows=1 width=49) (actual time=0.001..0.001 rows=1 loops=1)
+   -&gt;  Hash  (cost=15.00..15.00 rows=1000 width=8) (actual time=0.185..0.185 rows=1000 loops=1)
+         Buckets: 1024  Batches: 1  Memory Usage: 48kB
+         -&gt;  Seq Scan on q  (cost=0.00..15.00 rows=1000 width=8) (actual time=0.003..0.074 rows=1000 loops=1)
+ Planning time: 29.262 ms
+ Execution time: 256.337 ms
+(374 rows)
+</code></p>
+
+<p>The Hash Join execution takes 256 milliseconds for execution and 29 milliseconds
+for planning.  Relatively high planning time is expected because all the
+partitions are present in plan.  It’s surprising that optimizer didn’t select
+Nested Loop join.  Let’s force it to do so by <code>enable_hashjoin = off</code> and
+<code>enable_mergejoin = off</code>.</p>
+
+<p><code>sql Regular Append: Nested Loop
+# EXPLAIN ANALYZE SELECT * FROM q JOIN journal j ON q.dt = j.dt;
+                                                                      QUERY PLAN
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=0.28..170817.00 rows=1000 width=56) (actual time=1.091..452.658 rows=1000 loops=1)
+   -&gt;  Seq Scan on q  (cost=0.00..15.00 rows=1000 width=8) (actual time=0.006..0.158 rows=1000 loops=1)
+   -&gt;  Append  (cost=0.28..167.14 rows=366 width=49) (actual time=0.218..0.438 rows=1 loops=1000)
+         -&gt;  Index Scan using journal_1_dt_idx on journal_1 j  (cost=0.28..0.46 rows=1 width=49) (actual time=0.001..0.001 rows=0 loops=1000)
+               Index Cond: (dt = q.dt)
+         -&gt;  Index Scan using journal_2_dt_idx on journal_2 j_1  (cost=0.28..0.46 rows=1 width=49) (actual time=0.001..0.001 rows=0 loops=1000)
+               Index Cond: (dt = q.dt)
+         -&gt;  Index Scan using journal_3_dt_idx on journal_3 j_2  (cost=0.28..0.46 rows=1 width=49) (actual time=0.001..0.001 rows=0 loops=1000)
+               Index Cond: (dt = q.dt)
+......................................................................................................................................................
+         -&gt;  Index Scan using journal_366_dt_idx on journal_366 j_365  (cost=0.12..0.15 rows=1 width=49) (actual time=0.001..0.001 rows=0 loops=1000)
+               Index Cond: (dt = q.dt)
+ Planning time: 29.922 ms
+ Execution time: 456.140 ms
+(737 rows)
+</code></p>
+
+<p>The Nested Loop join takes 456 milliseconds to execute.  This is even worse.
+But this is understandable because we have to scan each partition of <code>journal</code>
+for each row of <code>q</code>.</p>
+
+<p>Finally, let’s enable RuntimeAppend.</p>
+
+<p><code>sql RuntimeAppend
+# EXPLAIN ANALYZE SELECT * FROM q JOIN journal j ON q.dt = j.dt;
+                                                                   QUERY PLAN
+------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=0.28..481.67 rows=1000 width=56) (actual time=0.041..9.911 rows=1000 loops=1)
+   -&gt;  Seq Scan on q  (cost=0.00..15.00 rows=1000 width=8) (actual time=0.005..0.079 rows=1000 loops=1)
+   -&gt;  Custom Scan (RuntimeAppend)  (cost=0.28..0.46 rows=1 width=49) (actual time=0.003..0.003 rows=1 loops=1000)
+         -&gt;  Index Scan using journal_330_dt_idx on journal_330 j  (cost=0.28..0.46 rows=1 width=49) (actual time=0.003..0.003 rows=1 loops=5)
+               Index Cond: (dt = q.dt)
+         -&gt;  Index Scan using journal_121_dt_idx on journal_121 j  (cost=0.28..0.46 rows=1 width=49) (actual time=0.004..0.004 rows=1 loops=1)
+               Index Cond: (dt = q.dt)
+         -&gt;  Index Scan using journal_37_dt_idx on journal_37 j  (cost=0.28..0.46 rows=1 width=49) (actual time=0.003..0.003 rows=1 loops=4)
+               Index Cond: (dt = q.dt)
+................................................................................................................................................
+         -&gt;  Index Scan using journal_355_dt_idx on journal_355 j  (cost=0.28..0.46 rows=1 width=49) (actual time=0.003..0.003 rows=1 loops=1)
+               Index Cond: (dt = q.dt)
+ Planning time: 30.775 ms
+ Execution time: 8.615 ms
+(687 rows)
+</code></p>
+
+<p>The Nested Loop join with RuntimeAppend takes only about 9 milliseconds
+to execute!  Such fast execution is possible thanks to RuntimeAppend scans only
+one relevant partition of <code>journal</code> for each row of <code>q</code>.</p>
+
+<p>Nevertheless, all the partitions are present in plan and planning time is still
+quite high.  This relatively high planning time could be not so significant
+for prepared statements or long OLAP queries.</p>
+
+<p>However, long planning time appears to be not the only problem.  We run a
+benchmark when RuntimeAppend node returns just a few rows in prepared statement.
+Despite high planning time doesn’t affect prepared statements, TPS was few
+time slower than it was without partitioning.  After running perf, we got this
+<a href="/images/runtimeappend_flamegraph.svg">flamegraph</a>.  This flamegraph shows that
+we spend very significant time for locking and unlocking every partition.
+Naturally, locking 365 partitions isn’t using fast-path locking and appears to
+be significant overhead.</p>
+
+<p>Thus, we see how huge benefit could runtime partition selection have.  However,
+in current design having all the partitions in plan cause high overhead.
+Solution could be found in redesigning partition locking.  We are researching
+this problem now.  It’s likely this problem can’t be solved in the boundaries
+of extension and proper solution requires hacking of PostgreSQL core.</p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Pg_pathman UPDATE and DELETE Support and Benchmark]]></title>

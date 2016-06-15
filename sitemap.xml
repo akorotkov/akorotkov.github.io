@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append/</loc>
+    <lastmod>2016-06-15T15:00:00+03:00</lastmod>
+  </url>
+  <url>
     <loc>http://akorotkov.github.io/blog/2016/06/09/psql-graph/</loc>
     <lastmod>2016-06-09T16:45:00+03:00</lastmod>
   </url>
@@ -41,6 +45,9 @@
   </url>
   <url>
     <loc>http://akorotkov.github.io/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/about/</loc>
   </url>
   <url>
     <loc>http://akorotkov.github.io/blog/categories/pg/</loc>
@@ -113,5 +120,11 @@
   </url>
   <url>
     <loc>http://akorotkov.github.io/blog/categories/iterm/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/append/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/runtime/</loc>
   </url>
 </urlset>

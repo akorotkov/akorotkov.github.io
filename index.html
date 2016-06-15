@@ -64,6 +64,9 @@
                 <li>
                     <a href="http://postgrespro.com">Postgres Professional company</a>
                 </li>
+                <li>
+                    <a href="/about">About me</a>
+                </li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li>
@@ -97,6 +100,57 @@
     
     <meta itemprop="url" content="http://akorotkov.github.io" />
       
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-06-15T15:00:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Wed 15 Jun 2016,  3:00 PM</time>
+        
+      </p>
+    
+    
+      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2016/06/15/pg_pathman-runtime-append/" itemprop="url">RuntimeAppend in Pg_pathman: Achievements and New Challenges</a></h2>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Dealing with partitioned tables we can’t always select relevant partitions
+during query planning.  Naturally, during query planning you can’t know values
+which come from subquery or outer part of nested loop join.  Nevertheless, it
+would be ridiculous to scan all the partitions in such cases.</p>
+
+<p>This is why my Postgres Professional colleague Dmitry Ivanov developed a
+new custom executor node for pg_pathman: RuntimeAppend.  This node behaves
+like regular Append node: it contains set of children Nodes which should be
+appended.  However, RuntimeAppend have one distinction: each run it selects
+only relevant children to append basing on parameter values.</p>
+
+</div>
+  
+  
+    <footer>
+      <a class="read-more btn btn-default" href="/blog/2016/06/15/pg_pathman-runtime-append/">Read on &rarr;</a>
+    </footer>
+  
+
+
+        </article>
       
       
         <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
@@ -725,6 +779,8 @@ typing <code>:gdb</code>.</p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/2016/06/15/pg_pathman-runtime-append/">RuntimeAppend in Pg_pathman: Achievements and New Challenges</a>
+    
     <a class="list-group-item " href="/blog/2016/06/09/psql-graph/">Drawing Graphs Directly in Psql</a>
     
     <a class="list-group-item " href="/blog/2016/05/09/scalability-towards-millions-tps/">PostgreSQL Scalability: Towards Millions TPS</a>
@@ -732,8 +788,6 @@ typing <code>:gdb</code>.</p>
     <a class="list-group-item " href="/blog/2016/04/06/extensible-access-methods/">Extensible Access Methods Are Committed to 9.6</a>
     
     <a class="list-group-item " href="/blog/2016/03/25/wait_monitoring_9_6/">Monitoring Wait Events in PostgreSQL 9.6</a>
-    
-    <a class="list-group-item " href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/">Pg_pathman UPDATE and DELETE Support and Benchmark</a>
     
   </div>
 </section>
