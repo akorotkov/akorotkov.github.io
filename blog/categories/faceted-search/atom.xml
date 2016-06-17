@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Faceted Search | Alexander Korotkov's blog]]></title>
+  <link href="http://akorotkov.github.io/blog/categories/faceted-search/atom.xml" rel="self"/>
+  <link href="http://akorotkov.github.io/"/>
+  <updated>2016-06-17T14:17:15+03:00</updated>
+  <id>http://akorotkov.github.io/</id>
+  <author>
+    <name><![CDATA[Alexander Korotkov]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Faceted Search in the Single PostgreSQL Query]]></title>
+    <link href="http://akorotkov.github.io/blog/2016/06/17/faceted-search/"/>
+    <updated>2016-06-17T14:20:00+03:00</updated>
+    <id>http://akorotkov.github.io/blog/2016/06/17/faceted-search</id>
+    <content type="html"><![CDATA[<p>Faceted search is very popular buzzword nowadays.  In short, faceted search
+specialty is that its results are organized per category.  Popular search
+engines are receiving special support of faceted search.</p>
+
+<p>Let’s see what PostgreSQL can do in this field.  At first, let’s formalize our
+task.  For each category which have matching documents we want to obtain:</p>
+
+<ul>
+  <li>Total number of matching documents;</li>
+  <li>TOP N matching documents.</li>
+</ul>
+
+<p>For sure, it’s possible to query such data using multiple per category SQL
+queries.  But we’ll make it in a single SQL query.  That also would be faster
+in majority of cases.  The query below implements faceted search over
+PostgreSQL mailing lists archives using window functions and CTE.  Usage
+of window function is essential while CTE was used for better query readability.</p>
+
+<p><code>psql Faceted search SQL query
+/*
+ * Select all matching messages, calculate rank within list and total count
+ * within list using window functions.
+ */
+WITH msg AS (
+    SELECT
+        message_id,
+        subject,
+        list,
+        RANK() OVER (
+            PARTITION BY list
+            ORDER BY ts_rank_cd(body_tsvector,  plainto_tsquery('index bloat')), id
+        ) rank,
+        COUNT(*) OVER (PARTITION BY list) cnt
+    FROM messages
+    WHERE body_tsvector @@ plainto_tsquery('index bloat')
+),
+/* Aggregate messages and count per list into json. */
+lst AS (
+    SELECT
+        list,
+        jsonb_build_object(
+            'count', cnt,
+            'results', jsonb_agg(
+                jsonb_build_object(
+                    'message_id', message_id,
+                    'subject', subject
+        ))) AS data
+    FROM msg
+    WHERE rank &lt;= 5
+    GROUP by list, cnt
+)
+/* Aggregate per list data into single json */
+SELECT  jsonb_object_agg(list, data)
+FROM    lst;
+</code></p>
+
+<p>The resulting JSON document contains total count of matching mailing list
+messages and TOP 5 relevant messages for each list.</p>
+
+<p><code>js Faceted search JSON result
+{
+  "pgsql-admin": {
+    "count": 263,
+    "results": [
+      {"message_id": "CACjxUsMUWkY1Z2K2A6yVdF88GT3xcFw5ofWTR6r1zqLUYu0WzA@mail.gmail.com", "subject": "Re: Slow planning time"},
+      {"message_id": "dcc563d11001041749w561874f7y6574fb42ab49f850@mail.gmail.com", "subject": "Re: Finetuning Autovacuum"},
+      {"message_id": "AANLkTikWabMzCRCSWuNLuPizSSQX3YILgJrNZuzgp3yM@mail.gmail.com", "subject": "Re: blocking automatic vacuum"},
+      {"message_id": "dcc563d10904011631l4058aabew12f3fe4895a072f3@mail.gmail.com", "subject": "Re: Vacuum Full"},
+      {"message_id": "FE44E0D7EAD2ED4BB2165071DB8E328C03062D9D@egcrc-ex01.egcrc.org", "subject": "Re: postgres bogged down beyond tolerance"
+      }
+    ]
+  },
+/*................................................................................*/
+  "pgsql-advocacy": {
+    "count": 8,
+    "results": [
+      {"message_id": "Pine.LNX.4.33.0310291602220.22178-100000@css120.ihs.com", "subject": "Re: Press Release"},
+      {"message_id": "20050502203626.GA29791@dcc.uchile.cl", "subject": "Re: [HACKERS] Increased company involvement"},
+      {"message_id": "5d94f7afb26f56652e06ba0657573ef2@biglumber.com", "subject": "Search and archives still out of sync"},
+      {"message_id": "Pine.GSO.4.64.0708010705100.13114@westnet.com", "subject": "Re: postgresql publication"},
+      {"message_id": "20070801151739.GF6165@alvh.no-ip.org", "subject": "Re: postgresql publication"
+      }
+    ]
+  }
+}
+</code></p>
+
+<p>In the plan of this query we can see that <code>message_body_idx</code> GIN index is
+scanned only once, and this is great.</p>
+
+<p><code>psql Plan of faceted search SQL query
+                                                                       QUERY PLAN
+---------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=2369.50..2369.51 rows=1 width=114) (actual time=34.232..34.232 rows=1 loops=1)
+   CTE msg
+     -&gt;  WindowAgg  (cost=2087.93..2354.30 rows=491 width=336) (actual time=30.925..33.087 rows=2486 loops=1)
+           -&gt;  WindowAgg  (cost=2087.93..2222.96 rows=491 width=336) (actual time=30.716..32.020 rows=2486 loops=1)
+                 -&gt;  Sort  (cost=2087.93..2089.16 rows=491 width=336) (actual time=30.711..30.838 rows=2486 loops=1)
+                       Sort Key: messages.list, (ts_rank_cd(messages.body_tsvector, plainto_tsquery('index bloat'::text))), messages.id
+                       Sort Method: quicksort  Memory: 582kB
+                       -&gt;  Bitmap Heap Scan on messages  (cost=48.05..2065.98 rows=491 width=336) (actual time=3.037..24.345 rows=2486 loops=1)
+                             Recheck Cond: (body_tsvector @@ plainto_tsquery('index bloat'::text))
+                             Heap Blocks: exact=2044
+                             -&gt;  Bitmap Index Scan on message_body_idx  (cost=0.00..47.93 rows=491 width=0) (actual time=2.723..2.723 rows=2486 loo
+                                   Index Cond: (body_tsvector @@ plainto_tsquery('index bloat'::text))
+   CTE lst
+     -&gt;  HashAggregate  (cost=12.69..13.69 rows=67 width=540) (actual time=34.090..34.133 rows=14 loops=1)
+           Group Key: msg.list, msg.cnt
+           -&gt;  CTE Scan on msg  (cost=0.00..11.05 rows=164 width=540) (actual time=30.928..33.879 rows=68 loops=1)
+                 Filter: (rank &lt;= 5)
+                 Rows Removed by Filter: 2418
+   -&gt;  CTE Scan on lst  (cost=0.00..1.34 rows=67 width=114) (actual time=34.092..34.140 rows=14 loops=1)
+ Planning time: 0.380 ms
+ Execution time: 34.357 ms
+</code></p>
+
+<p>Thus, it appears that nothing prevents you from implementing trendy kinds of
+searches using old good SQL and powerful features of PostgreSQL including:
+fulltext search, JSON support, window functions etc.</p>
+]]></content>
+  </entry>
+  
+</feed>

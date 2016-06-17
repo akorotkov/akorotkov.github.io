@@ -4,7 +4,7 @@
   <title><![CDATA[Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-06-15T15:20:51+03:00</updated>
+  <updated>2016-06-17T14:17:15+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -12,6 +12,213 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Faceted Search in the Single PostgreSQL Query]]></title>
+    <link href="http://akorotkov.github.io/blog/2016/06/17/faceted-search/"/>
+    <updated>2016-06-17T14:20:00+03:00</updated>
+    <id>http://akorotkov.github.io/blog/2016/06/17/faceted-search</id>
+    <content type="html"><![CDATA[<p>Faceted search is very popular buzzword nowadays.  In short, faceted search
+specialty is that its results are organized per category.  Popular search
+engines are receiving special support of faceted search.</p>
+
+<p>Let’s see what PostgreSQL can do in this field.  At first, let’s formalize our
+task.  For each category which have matching documents we want to obtain:</p>
+
+<ul>
+  <li>Total number of matching documents;</li>
+  <li>TOP N matching documents.</li>
+</ul>
+
+<p>For sure, it’s possible to query such data using multiple per category SQL
+queries.  But we’ll make it in a single SQL query.  That also would be faster
+in majority of cases.  The query below implements faceted search over
+PostgreSQL mailing lists archives using window functions and CTE.  Usage
+of window function is essential while CTE was used for better query readability.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>Faceted search SQL query</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+</pre></td><td class="code"><pre><code class="psql"><span class="line"><span class="cm">/*</span>
+</span><span class="line"><span class="cm"> * Select all matching messages, calculate rank within list and total count</span>
+</span><span class="line"><span class="cm"> * within list using window functions.</span>
+</span><span class="line"><span class="cm"> */</span>
+</span><span class="line"><span class="k">WITH</span> <span class="n">msg</span> <span class="k">AS</span> <span class="p">(</span>
+</span><span class="line">    <span class="k">SELECT</span>
+</span><span class="line">        <span class="n">message_id</span><span class="p">,</span>
+</span><span class="line">        <span class="n">subject</span><span class="p">,</span>
+</span><span class="line">        <span class="n">list</span><span class="p">,</span>
+</span><span class="line">        <span class="n">RANK</span><span class="p">()</span> <span class="k">OVER</span> <span class="p">(</span>
+</span><span class="line">            <span class="k">PARTITION</span> <span class="k">BY</span> <span class="n">list</span>
+</span><span class="line">            <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">ts_rank_cd</span><span class="p">(</span><span class="n">body_tsvector</span><span class="p">,</span>  <span class="n">plainto_tsquery</span><span class="p">(</span><span class="s1">&#39;index bloat&#39;</span><span class="p">)),</span> <span class="n">id</span>
+</span><span class="line">        <span class="p">)</span> <span class="n">rank</span><span class="p">,</span>
+</span><span class="line">        <span class="n">COUNT</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">OVER</span> <span class="p">(</span><span class="k">PARTITION</span> <span class="k">BY</span> <span class="n">list</span><span class="p">)</span> <span class="n">cnt</span>
+</span><span class="line">    <span class="k">FROM</span> <span class="n">messages</span>
+</span><span class="line">    <span class="k">WHERE</span> <span class="n">body_tsvector</span> <span class="o">@@</span> <span class="n">plainto_tsquery</span><span class="p">(</span><span class="s1">&#39;index bloat&#39;</span><span class="p">)</span>
+</span><span class="line"><span class="p">),</span>
+</span><span class="line"><span class="cm">/* Aggregate messages and count per list into json. */</span>
+</span><span class="line"><span class="n">lst</span> <span class="k">AS</span> <span class="p">(</span>
+</span><span class="line">    <span class="k">SELECT</span>
+</span><span class="line">        <span class="n">list</span><span class="p">,</span>
+</span><span class="line">        <span class="n">jsonb_build_object</span><span class="p">(</span>
+</span><span class="line">            <span class="s1">&#39;count&#39;</span><span class="p">,</span> <span class="n">cnt</span><span class="p">,</span>
+</span><span class="line">            <span class="s1">&#39;results&#39;</span><span class="p">,</span> <span class="n">jsonb_agg</span><span class="p">(</span>
+</span><span class="line">                <span class="n">jsonb_build_object</span><span class="p">(</span>
+</span><span class="line">                    <span class="s1">&#39;message_id&#39;</span><span class="p">,</span> <span class="n">message_id</span><span class="p">,</span>
+</span><span class="line">                    <span class="s1">&#39;subject&#39;</span><span class="p">,</span> <span class="n">subject</span>
+</span><span class="line">        <span class="p">)))</span> <span class="k">AS</span> <span class="k">data</span>
+</span><span class="line">    <span class="k">FROM</span> <span class="n">msg</span>
+</span><span class="line">    <span class="k">WHERE</span> <span class="n">rank</span> <span class="o">&lt;=</span> <span class="mf">5</span>
+</span><span class="line">    <span class="k">GROUP</span> <span class="k">by</span> <span class="n">list</span><span class="p">,</span> <span class="n">cnt</span>
+</span><span class="line"><span class="p">)</span>
+</span><span class="line"><span class="cm">/* Aggregate per list data into single json */</span>
+</span><span class="line"><span class="k">SELECT</span>  <span class="n">jsonb_object_agg</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="k">data</span><span class="p">)</span>
+</span><span class="line"><span class="k">FROM</span>    <span class="n">lst</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>The resulting JSON document contains total count of matching mailing list
+messages and TOP 5 relevant messages for each list.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>Faceted search JSON result</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+</pre></td><td class="code"><pre><code class="js"><span class="line"><span class="p">{</span>
+</span><span class="line">  <span class="s2">&quot;pgsql-admin&quot;</span><span class="o">:</span> <span class="p">{</span>
+</span><span class="line">    <span class="s2">&quot;count&quot;</span><span class="o">:</span> <span class="mi">263</span><span class="p">,</span>
+</span><span class="line">    <span class="s2">&quot;results&quot;</span><span class="o">:</span> <span class="p">[</span>
+</span><span class="line">      <span class="p">{</span><span class="s2">&quot;message_id&quot;</span><span class="o">:</span> <span class="s2">&quot;CACjxUsMUWkY1Z2K2A6yVdF88GT3xcFw5ofWTR6r1zqLUYu0WzA@mail.gmail.com&quot;</span><span class="p">,</span> <span class="s2">&quot;subject&quot;</span><span class="o">:</span> <span class="s2">&quot;Re: Slow planning time&quot;</span><span class="p">},</span>
+</span><span class="line">      <span class="p">{</span><span class="s2">&quot;message_id&quot;</span><span class="o">:</span> <span class="s2">&quot;dcc563d11001041749w561874f7y6574fb42ab49f850@mail.gmail.com&quot;</span><span class="p">,</span> <span class="s2">&quot;subject&quot;</span><span class="o">:</span> <span class="s2">&quot;Re: Finetuning Autovacuum&quot;</span><span class="p">},</span>
+</span><span class="line">      <span class="p">{</span><span class="s2">&quot;message_id&quot;</span><span class="o">:</span> <span class="s2">&quot;AANLkTikWabMzCRCSWuNLuPizSSQX3YILgJrNZuzgp3yM@mail.gmail.com&quot;</span><span class="p">,</span> <span class="s2">&quot;subject&quot;</span><span class="o">:</span> <span class="s2">&quot;Re: blocking automatic vacuum&quot;</span><span class="p">},</span>
+</span><span class="line">      <span class="p">{</span><span class="s2">&quot;message_id&quot;</span><span class="o">:</span> <span class="s2">&quot;dcc563d10904011631l4058aabew12f3fe4895a072f3@mail.gmail.com&quot;</span><span class="p">,</span> <span class="s2">&quot;subject&quot;</span><span class="o">:</span> <span class="s2">&quot;Re: Vacuum Full&quot;</span><span class="p">},</span>
+</span><span class="line">      <span class="p">{</span><span class="s2">&quot;message_id&quot;</span><span class="o">:</span> <span class="s2">&quot;FE44E0D7EAD2ED4BB2165071DB8E328C03062D9D@egcrc-ex01.egcrc.org&quot;</span><span class="p">,</span> <span class="s2">&quot;subject&quot;</span><span class="o">:</span> <span class="s2">&quot;Re: postgres bogged down beyond tolerance&quot;</span>
+</span><span class="line">      <span class="p">}</span>
+</span><span class="line">    <span class="p">]</span>
+</span><span class="line">  <span class="p">},</span>
+</span><span class="line"><span class="cm">/*................................................................................*/</span>
+</span><span class="line">  <span class="s2">&quot;pgsql-advocacy&quot;</span><span class="o">:</span> <span class="p">{</span>
+</span><span class="line">    <span class="s2">&quot;count&quot;</span><span class="o">:</span> <span class="mi">8</span><span class="p">,</span>
+</span><span class="line">    <span class="s2">&quot;results&quot;</span><span class="o">:</span> <span class="p">[</span>
+</span><span class="line">      <span class="p">{</span><span class="s2">&quot;message_id&quot;</span><span class="o">:</span> <span class="s2">&quot;Pine.LNX.4.33.0310291602220.22178-100000@css120.ihs.com&quot;</span><span class="p">,</span> <span class="s2">&quot;subject&quot;</span><span class="o">:</span> <span class="s2">&quot;Re: Press Release&quot;</span><span class="p">},</span>
+</span><span class="line">      <span class="p">{</span><span class="s2">&quot;message_id&quot;</span><span class="o">:</span> <span class="s2">&quot;20050502203626.GA29791@dcc.uchile.cl&quot;</span><span class="p">,</span> <span class="s2">&quot;subject&quot;</span><span class="o">:</span> <span class="s2">&quot;Re: [HACKERS] Increased company involvement&quot;</span><span class="p">},</span>
+</span><span class="line">      <span class="p">{</span><span class="s2">&quot;message_id&quot;</span><span class="o">:</span> <span class="s2">&quot;5d94f7afb26f56652e06ba0657573ef2@biglumber.com&quot;</span><span class="p">,</span> <span class="s2">&quot;subject&quot;</span><span class="o">:</span> <span class="s2">&quot;Search and archives still out of sync&quot;</span><span class="p">},</span>
+</span><span class="line">      <span class="p">{</span><span class="s2">&quot;message_id&quot;</span><span class="o">:</span> <span class="s2">&quot;Pine.GSO.4.64.0708010705100.13114@westnet.com&quot;</span><span class="p">,</span> <span class="s2">&quot;subject&quot;</span><span class="o">:</span> <span class="s2">&quot;Re: postgresql publication&quot;</span><span class="p">},</span>
+</span><span class="line">      <span class="p">{</span><span class="s2">&quot;message_id&quot;</span><span class="o">:</span> <span class="s2">&quot;20070801151739.GF6165@alvh.no-ip.org&quot;</span><span class="p">,</span> <span class="s2">&quot;subject&quot;</span><span class="o">:</span> <span class="s2">&quot;Re: postgresql publication&quot;</span>
+</span><span class="line">      <span class="p">}</span>
+</span><span class="line">    <span class="p">]</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>In the plan of this query we can see that <code>message_body_idx</code> GIN index is
+scanned only once, and this is great.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>Plan of faceted search SQL query</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+</pre></td><td class="code"><pre><code class="psql"><span class="line">                                                                   <span class="n">QUERY</span> <span class="n">PLAN</span>
+</span><span class="line"><span class="c1">---------------------------------------------------------------------------------------------------------------------------------------------------</span>
+</span><span class="line"> <span class="k">Aggregate</span>  <span class="p">(</span><span class="k">cost</span><span class="o">=</span><span class="mf">2369.50..2369.51</span> <span class="k">rows</span><span class="o">=</span><span class="mf">1</span> <span class="n">width</span><span class="o">=</span><span class="mf">114</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="nb">time</span><span class="o">=</span><span class="mf">34.232..34.232</span> <span class="k">rows</span><span class="o">=</span><span class="mf">1</span> <span class="n">loops</span><span class="o">=</span><span class="mf">1</span><span class="p">)</span>
+</span><span class="line">   <span class="n">CTE</span> <span class="n">msg</span>
+</span><span class="line"> <span class="o">-&gt;</span>  <span class="n">WindowAgg</span>  <span class="p">(</span><span class="k">cost</span><span class="o">=</span><span class="mf">2087.93..2354.30</span> <span class="k">rows</span><span class="o">=</span><span class="mf">491</span> <span class="n">width</span><span class="o">=</span><span class="mf">336</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="nb">time</span><span class="o">=</span><span class="mf">30.925..33.087</span> <span class="k">rows</span><span class="o">=</span><span class="mf">2486</span> <span class="n">loops</span><span class="o">=</span><span class="mf">1</span><span class="p">)</span>
+</span><span class="line">       <span class="o">-&gt;</span>  <span class="n">WindowAgg</span>  <span class="p">(</span><span class="k">cost</span><span class="o">=</span><span class="mf">2087.93..2222.96</span> <span class="k">rows</span><span class="o">=</span><span class="mf">491</span> <span class="n">width</span><span class="o">=</span><span class="mf">336</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="nb">time</span><span class="o">=</span><span class="mf">30.716..32.020</span> <span class="k">rows</span><span class="o">=</span><span class="mf">2486</span> <span class="n">loops</span><span class="o">=</span><span class="mf">1</span><span class="p">)</span>
+</span><span class="line">             <span class="o">-&gt;</span>  <span class="n">Sort</span>  <span class="p">(</span><span class="k">cost</span><span class="o">=</span><span class="mf">2087.93..2089.16</span> <span class="k">rows</span><span class="o">=</span><span class="mf">491</span> <span class="n">width</span><span class="o">=</span><span class="mf">336</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="nb">time</span><span class="o">=</span><span class="mf">30.711..30.838</span> <span class="k">rows</span><span class="o">=</span><span class="mf">2486</span> <span class="n">loops</span><span class="o">=</span><span class="mf">1</span><span class="p">)</span>
+</span><span class="line">                   <span class="n">Sort</span> <span class="k">Key</span><span class="p">:</span> <span class="n">messages</span><span class="mf">.</span><span class="n">list</span><span class="p">,</span> <span class="p">(</span><span class="n">ts_rank_cd</span><span class="p">(</span><span class="n">messages</span><span class="mf">.</span><span class="n">body_tsvector</span><span class="p">,</span> <span class="n">plainto_tsquery</span><span class="p">(</span><span class="s1">&#39;index bloat&#39;</span><span class="o">::</span><span class="nb">text</span><span class="p">))),</span> <span class="n">messages</span><span class="mf">.</span><span class="n">id</span>
+</span><span class="line">                   <span class="n">Sort</span> <span class="n">Method</span><span class="p">:</span> <span class="n">quicksort</span>  <span class="n">Memory</span><span class="p">:</span> <span class="mf">582</span><span class="n">kB</span>
+</span><span class="line">                   <span class="o">-&gt;</span>  <span class="n">Bitmap</span> <span class="n">Heap</span> <span class="n">Scan</span> <span class="k">on</span> <span class="n">messages</span>  <span class="p">(</span><span class="k">cost</span><span class="o">=</span><span class="mf">48.05..2065.98</span> <span class="k">rows</span><span class="o">=</span><span class="mf">491</span> <span class="n">width</span><span class="o">=</span><span class="mf">336</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="nb">time</span><span class="o">=</span><span class="mf">3.037..24.345</span> <span class="k">rows</span><span class="o">=</span><span class="mf">2486</span> <span class="n">loops</span><span class="o">=</span><span class="mf">1</span><span class="p">)</span>
+</span><span class="line">                         <span class="k">Recheck</span> <span class="n">Cond</span><span class="p">:</span> <span class="p">(</span><span class="n">body_tsvector</span> <span class="o">@@</span> <span class="n">plainto_tsquery</span><span class="p">(</span><span class="s1">&#39;index bloat&#39;</span><span class="o">::</span><span class="nb">text</span><span class="p">))</span>
+</span><span class="line">                         <span class="n">Heap</span> <span class="n">Blocks</span><span class="p">:</span> <span class="n">exact</span><span class="o">=</span><span class="mf">2044</span>
+</span><span class="line">                         <span class="o">-&gt;</span>  <span class="n">Bitmap</span> <span class="k">Index</span> <span class="n">Scan</span> <span class="k">on</span> <span class="n">message_body_idx</span>  <span class="p">(</span><span class="k">cost</span><span class="o">=</span><span class="mf">0.00..47.93</span> <span class="k">rows</span><span class="o">=</span><span class="mf">491</span> <span class="n">width</span><span class="o">=</span><span class="mf">0</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="nb">time</span><span class="o">=</span><span class="mf">2.723..2.723</span> <span class="k">rows</span><span class="o">=</span><span class="mf">2486</span> <span class="n">loo</span>
+</span><span class="line">                               <span class="k">Index</span> <span class="n">Cond</span><span class="p">:</span> <span class="p">(</span><span class="n">body_tsvector</span> <span class="o">@@</span> <span class="n">plainto_tsquery</span><span class="p">(</span><span class="s1">&#39;index bloat&#39;</span><span class="o">::</span><span class="nb">text</span><span class="p">))</span>
+</span><span class="line">   <span class="n">CTE</span> <span class="n">lst</span>
+</span><span class="line"> <span class="o">-&gt;</span>  <span class="n">HashAggregate</span>  <span class="p">(</span><span class="k">cost</span><span class="o">=</span><span class="mf">12.69..13.69</span> <span class="k">rows</span><span class="o">=</span><span class="mf">67</span> <span class="n">width</span><span class="o">=</span><span class="mf">540</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="nb">time</span><span class="o">=</span><span class="mf">34.090..34.133</span> <span class="k">rows</span><span class="o">=</span><span class="mf">14</span> <span class="n">loops</span><span class="o">=</span><span class="mf">1</span><span class="p">)</span>
+</span><span class="line">       <span class="k">Group</span> <span class="k">Key</span><span class="p">:</span> <span class="n">msg</span><span class="mf">.</span><span class="n">list</span><span class="p">,</span> <span class="n">msg</span><span class="mf">.</span><span class="n">cnt</span>
+</span><span class="line">       <span class="o">-&gt;</span>  <span class="n">CTE</span> <span class="n">Scan</span> <span class="k">on</span> <span class="n">msg</span>  <span class="p">(</span><span class="k">cost</span><span class="o">=</span><span class="mf">0.00..11.05</span> <span class="k">rows</span><span class="o">=</span><span class="mf">164</span> <span class="n">width</span><span class="o">=</span><span class="mf">540</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="nb">time</span><span class="o">=</span><span class="mf">30.928..33.879</span> <span class="k">rows</span><span class="o">=</span><span class="mf">68</span> <span class="n">loops</span><span class="o">=</span><span class="mf">1</span><span class="p">)</span>
+</span><span class="line">             <span class="n">Filter</span><span class="p">:</span> <span class="p">(</span><span class="n">rank</span> <span class="o">&lt;=</span> <span class="mf">5</span><span class="p">)</span>
+</span><span class="line">             <span class="k">Rows</span> <span class="n">Removed</span> <span class="k">by</span> <span class="n">Filter</span><span class="p">:</span> <span class="mf">2418</span>
+</span><span class="line">   <span class="o">-&gt;</span>  <span class="n">CTE</span> <span class="n">Scan</span> <span class="k">on</span> <span class="n">lst</span>  <span class="p">(</span><span class="k">cost</span><span class="o">=</span><span class="mf">0.00..1.34</span> <span class="k">rows</span><span class="o">=</span><span class="mf">67</span> <span class="n">width</span><span class="o">=</span><span class="mf">114</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="nb">time</span><span class="o">=</span><span class="mf">34.092..34.140</span> <span class="k">rows</span><span class="o">=</span><span class="mf">14</span> <span class="n">loops</span><span class="o">=</span><span class="mf">1</span><span class="p">)</span>
+</span><span class="line"> <span class="n">Planning</span> <span class="nb">time</span><span class="p">:</span> <span class="mf">0.380</span> <span class="n">ms</span>
+</span><span class="line"> <span class="n">Execution</span> <span class="nb">time</span><span class="p">:</span> <span class="mf">34.357</span> <span class="n">ms</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Thus, it appears that nothing prevents you from implementing trendy kinds of
+searches using old good SQL and powerful features of PostgreSQL including:
+fulltext search, JSON support, window functions etc.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[RuntimeAppend in Pg_pathman: Achievements and New Challenges]]></title>
