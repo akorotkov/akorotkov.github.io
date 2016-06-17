@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Pg | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/pg/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-06-17T14:17:15+03:00</updated>
+  <updated>2016-06-17T14:23:18+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -35,6 +35,8 @@ queries.  But we’ll make it in a single SQL query.  That also would be faster
 in majority of cases.  The query below implements faceted search over
 PostgreSQL mailing lists archives using window functions and CTE.  Usage
 of window function is essential while CTE was used for better query readability.</p>
+
+<!--more-->
 
 <p><code>psql Faceted search SQL query
 /*
