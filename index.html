@@ -120,6 +120,57 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-09-29T16:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Thu 29 Sep 2016,  4:20 PM</time>
+        
+      </p>
+    
+    
+      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2016/09/29/release-9-6/" itemprop="url">PostgreSQL 9.6 Release Is Approaching. Postgres Pro Has Contributed to It.</a></h2>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border center 2x" src="/images/ppg-9.6.png" width="365" height="95" /></p>
+
+<p>New major release of PostgreSQL is approaching.  PostgreSQL 9.6 is expected to
+be released later today.  This is a great release which provides to users
+<a href="https://www.postgresql.org/docs/9.6/static/release-9-6.html">set of outstanding new features</a>.
+I’m especially happy that Postgres Professional did substantial contribution
+to this release.  In particular, full-text search for phrases and scalability
+improvements are listed as major enhancements of this new PostgreSQL release.</p>
+
+<p>The full list of Postgres Professional constributions including:</p>
+
+</div>
+  
+  
+    <footer>
+      <a class="read-more btn btn-default" href="/blog/2016/09/29/release-9-6/">Read on &rarr;</a>
+    </footer>
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-06-17T14:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri 17 Jun 2016,  2:20 PM</time>
         
       </p>
@@ -691,59 +742,6 @@ infrastructure and fulfill it with effective internal algorithms.</p>
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-uppercase">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-09-07T11:30:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon  7 Sep 2015, 11:30 AM</time>
-        
-      </p>
-    
-    
-      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2015/09/07/jsonb_statistics/" itemprop="url">Thoughts About Jsonb Statistics</a></h2>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><h2 id="introduction">Introduction</h2>
-
-<p>Users of jsonb datatype frequently complaint that it lucks of statistics.
-Naturally, today jsonb statistics is just default scalar statistics, which is
-suitable for <code>&lt;</code>, <code>&lt;=</code>, <code>=</code>, <code>&gt;=</code>, <code>&gt;</code> operators selectivity estimation. But
-people search jsonb documents using <code>@&gt;</code> operator, expressions with <code>-&gt;</code>
-operator, jsquery etc. This is why selectivity estimation, which people
-typically get in their queries, is just a stub. This could lead wrong query plans
-and bad performance. And it made us introduce hints in jsquery extension.</p>
-
-<p>Thus, problem is clear. But the right solution is still unclear, at least for
-me. Let me discuss evident approaches to jsonb statistics and their limitations.</p>
-
-</div>
-  
-  
-    <footer>
-      <a class="read-more btn btn-default" href="/blog/2015/09/07/jsonb_statistics/">Read on &rarr;</a>
-    </footer>
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -767,6 +765,8 @@ me. Let me discuss evident approaches to jsonb statistics and their limitations.
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/2016/09/29/release-9-6/">PostgreSQL 9.6 Release Is Approaching. Postgres Pro Has Contributed to It.</a>
+    
     <a class="list-group-item " href="/blog/2016/06/17/faceted-search/">Faceted Search in the Single PostgreSQL Query</a>
     
     <a class="list-group-item " href="/blog/2016/06/15/pg_pathman-runtime-append/">RuntimeAppend in Pg_pathman: Achievements and New Challenges</a>
@@ -774,8 +774,6 @@ me. Let me discuss evident approaches to jsonb statistics and their limitations.
     <a class="list-group-item " href="/blog/2016/06/09/psql-graph/">Drawing Graphs Directly in Psql</a>
     
     <a class="list-group-item " href="/blog/2016/05/09/scalability-towards-millions-tps/">PostgreSQL Scalability: Towards Millions TPS</a>
-    
-    <a class="list-group-item " href="/blog/2016/04/06/extensible-access-methods/">Extensible Access Methods Are Committed to 9.6</a>
     
   </div>
 </section>

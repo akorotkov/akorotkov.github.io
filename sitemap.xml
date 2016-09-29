@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://akorotkov.github.io/blog/2016/09/29/release-9-6/</loc>
+    <lastmod>2016-09-29T16:20:00+03:00</lastmod>
+  </url>
+  <url>
     <loc>http://akorotkov.github.io/blog/2016/06/17/faceted-search/</loc>
     <lastmod>2016-06-17T14:20:00+03:00</lastmod>
   </url>
@@ -133,5 +137,11 @@
   </url>
   <url>
     <loc>http://akorotkov.github.io/blog/categories/faceted-search/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/release/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/9-dot-6/</loc>
   </url>
 </urlset>

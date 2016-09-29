@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Pg | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/pg/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-07-03T00:08:37+03:00</updated>
+  <updated>2016-09-29T16:22:58+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -12,6 +12,188 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[PostgreSQL 9.6 Release Is Approaching. Postgres Pro Has Contributed to It.]]></title>
+    <link href="http://akorotkov.github.io/blog/2016/09/29/release-9-6/"/>
+    <updated>2016-09-29T16:20:00+03:00</updated>
+    <id>http://akorotkov.github.io/blog/2016/09/29/release-9-6</id>
+    <content type="html"><![CDATA[<p><img class="no-border center 2x" src="/images/ppg-9.6.png" width="365" height="95"></p>
+
+<p>New major release of PostgreSQL is approaching.  PostgreSQL 9.6 is expected to
+be released later today.  This is a great release which provides to users
+<a href="https://www.postgresql.org/docs/9.6/static/release-9-6.html">set of outstanding new features</a>.
+I’m especially happy that Postgres Professional did substantial contribution
+to this release.  In particular, full-text search for phrases and scalability
+improvements are listed as major enhancements of this new PostgreSQL release.</p>
+
+<p>The full list of Postgres Professional constributions including:</p>
+
+<!--more-->
+
+<ul>
+  <li>
+    <p>Improve the pg_stat_activity view’s information about what a process is waiting for (Amit Kapila, Ildus Kurbangaliev)</p>
+
+    <p>Historically a process has only been shown as waiting if it was waiting for a heavyweight lock. Now waits for lightweight locks and buffer pins are also shown in pg_stat_activity. Also, the type of lock being waited for is now visible. These changes replace the waiting column with wait_event_type and wait_event.</p>
+
+    <p>See <a href="/blog/2016/03/25/wait_monitoring_9_6/">blog post</a> for details.</p>
+  </li>
+  <li>
+    <p>Fix the default text search parser to allow leading digits in email and host tokens (Artur Zakirov)</p>
+
+    <p>In most cases this will result in few changes in the parsing of text. But if you have data where such addresses occur frequently, it may be worth rebuilding dependent tsvector columns and indexes so that addresses of this form will be found properly by text searches.</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/56CC9C9D.1050603%40postgrespro.ru">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Allow GIN index builds to make effective use of maintenance_work_mem settings larger than 1 GB (Robert Abraham, Teodor Sigaev)</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/CABQqHAWYXW%2BNzAYw4uG_FnbjrdEFyRaigLRkQ7AzAtS6AbHnfA%40mail.gmail.com">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Add pages deleted from a GIN index’s pending list to the free space map immediately (Jeff Janes, Teodor Sigaev)</p>
+
+    <p>This reduces bloat if the table is not vacuumed often.</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/CAMkU%3D1xfE1MnGMkv655hB8jCs3PBTb4S5H%2BFnQv8kcmYzyeBDQ%40mail.gmail.com">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Improve handling of dead index tuples in GiST indexes (Anastasia Lubennikova)</p>
+
+    <p>Dead index tuples are now marked as such when an index scan notices that the corresponding heap tuple is dead. When inserting tuples, marked-dead tuples will be removed if needed to make space on the page.</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/CAP4vRV6FcKVOpPxs_9L327FpTWz75Ly%3DJRUeY-W89amS19BzwQ%40mail.gmail.com">mailing list discussion</a>  for details.</p>
+  </li>
+  <li>
+    <p>Add an SP-GiST operator class for type box (Alexander Lebedev)</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/56352972.9020608%40postgrespro.ru">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Replace shared-buffer header spinlocks with atomic operations to improve scalability (Alexander Korotkov, Andres Freund)</p>
+
+    <p>See <a href="/blog/2016/05/09/scalability-towards-millions-tps/">blog post</a> for details.</p>
+  </li>
+  <li>
+    <p>Partition the shared hash table freelist to reduce contention on multi-CPU-socket servers (Aleksander Alekseev)</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/20151211170001.78ded9d7@fujitsu">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Improve performance of resource owners with many tracked objects (Aleksander Alekseev)</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/20151204151504.5c7e4278@fujitsu">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>When appropriate, postpone evaluation of SELECT output expressions until after an ORDER BY sort (Konstantin Knizhnik)</p>
+
+    <p>This change ensures that volatile or expensive functions in the output list are executed in the order suggested by ORDER BY, and that they are not evaluated more times than required when there is a LIMIT clause. Previously, these properties held if the ordering was performed by an index scan or pre-merge-join sort, but not if it was performed by a top-level sort.</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/9879B786-E011-44A1-91B8-54649B84106D%40postgrespro.ru">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Add options to ALTER OPERATOR to allow changing the selectivity functions associated with an existing operator (Yury Zhuravlev)</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/3348985.V7xMLFDaJO%40dinodell">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Introduce CREATE ACCESS METHOD to allow extensions to create index access methods (Alexander Korotkov, Petr Jelínek)</p>
+
+    <p>See <a href="http://www.pgcon.org/2016/schedule/attachments/421_engines.pdf">slides</a> for details.</p>
+  </li>
+  <li>
+    <p>Improve full-text search to support searching for phrases, that is, lexemes appearing adjacent to each other in a specific order, or with a specified distance between them (Teodor Sigaev, Oleg Bartunov, Dmitry Ivanov)</p>
+
+    <p>See <a href="http://www.pgcon.org/2016/schedule/attachments/436_pgcon-2016-fts.pdf">slides</a> for details.</p>
+  </li>
+  <li>
+    <p>Allow omitting one or both boundaries in an array slice specifier, e.g. array_col[3:] (Yury Zhuravlev)</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/2987745.PueTkqGxbO@dinodell">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Upgrade the ispell dictionary type to handle modern Hunspell files and support more languages (Artur Zakirov)</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/56264908.2020203@postgrespro.ru">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Add new functions for tsvector data (Stas Kelvich)</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/DBD45805-968D-48B1-992A-79F8AC7D3140@postgrespro.ru">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Allow ts_stat() and tsvector_update_trigger() to operate on values that are of types binary-compatible with the expected argument type, not only that argument type; for example allow citext where text is expected (Teodor Sigaev)</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/EA8346F9-8F64-4837-ABE1-B383AF36E0DC@kineticode.com">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Improve pg_rewind so that it can work when the target timeline changes (Alexander Korotkov)</p>
+
+    <p>This allows, for example, rewinding a promoted standby back to some state of the old master’s timeline.</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/CAPpHfdtaqYGz6JKvx4AdySA_ceqPH7Lki=F1HxUeNNaBRC7Mtw@mail.gmail.com">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Restructure index access method API to hide most of it at the C level (Alexander Korotkov, Andrew Gierth)</p>
+
+    <p>This change modernizes the index AM API to look more like the designs we have adopted for foreign data wrappers and tablesample handlers. This simplifies the C code and makes it much more practical to define index access methods in installable extensions. A consequence is that most of the columns of the pg_am system catalog have disappeared. New inspection functions have been added to allow SQL queries to determine index AM properties that used to be discoverable from pg_am.</p>
+
+    <p>See <a href="http://www.pgcon.org/2016/schedule/attachments/421_engines.pdf">slides</a> for details.</p>
+  </li>
+  <li>
+    <p>Add a generic interface for writing WAL records (Alexander Korotkov, Petr Jelínek, Markus Nullmeier)</p>
+
+    <p>This change allows extensions to write WAL records for changes to pages using a standard layout. The problem of needing to replay WAL without access to the extension is solved by having generic replay code. This allows extensions to implement, for example, index access methods and have WAL support for them.</p>
+
+    <p>See <a href="http://www.pgcon.org/2016/schedule/attachments/421_engines.pdf">slides</a> for details.</p>
+  </li>
+  <li>
+    <p>Allow SP-GiST operator classes to store an arbitrary “traversal value” while descending the index (Alexander Lebedev, Teodor Sigaev)</p>
+
+    <p>This is somewhat like the “reconstructed value”, but it could be any arbitrary chunk of data, not necessarily of the same data type as the indexed column.</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/56352972.9020608%40postgrespro.ru">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Add contrib/bloom module that implements an index access method based on Bloom filtering (Teodor Sigaev, Alexander Korotkov)</p>
+
+    <p>This is primarily a proof-of-concept for non-core index access methods, but it could be useful in its own right for queries that search many columns.</p>
+
+    <p>See <a href="http://www.pgcon.org/2016/schedule/attachments/421_engines.pdf">slides</a> for details.</p>
+  </li>
+  <li>
+    <p>In contrib/cube, introduce distance operators for cubes, and support kNN-style searches in GiST indexes on cube columns (Stas Kelvich)</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/9E07E159-E405-41E2-9889-A04F534FC257@gmail.com">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Add selectivity estimation functions for contrib/intarray operators to improve plans for queries using those operators (Yury Zhuravlev, Alexander Korotkov)</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/1529951.MrgHGDLjOD%40dinodell">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Make contrib/pageinspect’s heap_page_items() function show the raw data in each tuple, and add new functions tuple_data_split() and heap_page_item_attrs() for inspection of individual tuple fields (Nikolay Shaplov)</p>
+
+    <p>See <a href="https://pgconf.ru/media/2016/05/13/tuple-internals.pdf">slides</a> for details.</p>
+  </li>
+  <li>
+    <p>Add support for “word similarity” to contrib/pg_trgm (Alexander Korotkov, Artur Zakirov)</p>
+
+    <p>These functions and operators measure the similarity between one string and the most similar single word of another string.</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/567461EC.4030803@postgrespro.ru#567461EC.4030803@postgrespro.ru">mailing list discussion</a> for details.</p>
+  </li>
+  <li>
+    <p>Add configuration parameter pg_trgm.similarity_threshold for contrib/pg_trgm’s similarity threshold (Artur Zakirov)</p>
+
+    <p>This threshold has always been configurable, but formerly it was controlled by special-purpose functions set_limit() and show_limit(). Those are now deprecated.</p>
+
+    <p>See <a href="https://www.postgresql.org/message-id/flat/567461EC.4030803@postgrespro.ru#567461EC.4030803@postgrespro.ru">mailing list discussion</a> for details.</p>
+  </li>
+</ul>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Faceted Search in the Single PostgreSQL Query]]></title>
@@ -391,75 +573,6 @@ could say, that PostgreSQL opens a new era of millions TPS.</p>
 YUriy Zhuravlev who wrote original proof of concept of this patch;</li>
   <li>Dilip Kumar and Robert Haas who helped with testing.</li>
 </ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Extensible Access Methods Are Committed to 9.6]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/"/>
-    <updated>2016-04-06T15:26:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods</id>
-    <content type="html"><![CDATA[<p>PostgreSQL 9.6 receives suitable support of extensible index access methods.
-And that’s good news because Postgres was initially designed to support it.</p>
-
-<blockquote>
-  <p>“It is imperative that a user be able to construct new access methods to 
-provide efficient access to instances of nontraditional base types”</p>
-
-  <p>Michael Stonebraker, Jeff Anton, Michael Hirohama.
-Extendability in POSTGRES , IEEE Data Eng. Bull. 10 (2) pp.16-23, 1987</p>
-</blockquote>
-
-<p>That was a huge work which consists of multiple steps.</p>
-
-<!--more-->
-
-<ol>
-  <li>Rework access method interface so that access method internals are hidden
-from SQL level to C level.  Besides help for custom access methods support,
-this refactoring is good by itself.<br />
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=65c5fcd3">Committed</a> by Tom Lane.</li>
-  <li><code>CREATE ACCESS METHOD</code> command which provides legal way for insertion into
-pg_am with support of dependencies and pg_dump/pg_restore.
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=473b9328">Committed</a> by Alvaro Herrera.</li>
-  <li>Generic WAL interface which provides custom access methods the way to be
-WAL-logged.  Each built-in access method has its own type of WAL records.
-But custom access method shouldn’t because it could affect reliability.
-Generic WAL records represent difference between pages in general way as
-result of per-byte comparison of original and modified images of the page.
-For sure, it is not as efficient as own type of WAL records, but there is
-no choice under restrictions we have.
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=65578341">Committed</a> by Teodor Sigaev.</li>
-  <li>Bloom contrib module which is example of custom index access method which
-uses generic WAL interface.  This contrib is essential for testing
-infrastructure described above.  Also, this access method could be useful by
-itself.
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=9ee014fc">Committed</a> by Teodor Sigaev.</li>
-</ol>
-
-<p>I am very thankful for the efforts of committers and reviewers who make it
-possible to include these features into PostgreSQL.</p>
-
-<p>However, end users don’t really care about this infrastructure.  They do care
-about features we can provide on the base of this infrastructure.  Actually,
-we would be able to have index access methods which are:</p>
-
-<ul>
-  <li>Too hard to add to PostgreSQL core.  For instance, we presented
-<a href="https://wiki.postgresql.org/images/2/25/Full-text_search_in_PostgreSQL_in_milliseconds-extended-version.pdf">fast FTS</a>
-in 2012.  We have 2 of 4 GIN features committed to core.  And it seems to be
-very long way to have rest of features in core.  But since 9.6 we would
-provide it as an extension.</li>
-  <li>Not patent free.  There are some interesting data structures which are
-covered by patents (Fractal Tree index, for example).  This is why they
-couldn’t be added to PostgreSQL core.  Since 9.6, they could be provided
-without fork.</li>
-</ul>
-
-<p>Also, I consider this work as an approach (together with FDW) to pluggable
-storage engines.  I will speak about this during my
-<a href="http://www.pgcon.org/2016/schedule/events/920.en.html">talk at PGCon 2016</a>.</p>
 
 ]]></content>
   </entry>
