@@ -4,7 +4,7 @@
   <title><![CDATA[Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2016-09-29T16:22:58+03:00</updated>
+  <updated>2017-04-08T00:20:23+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -12,6 +12,20 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA["Our Answer to Uber" Talk at United Dev Conf, Minsk]]></title>
+    <link href="http://akorotkov.github.io/blog/2017/04/08/uber-answer/"/>
+    <updated>2017-04-08T00:20:00+03:00</updated>
+    <id>http://akorotkov.github.io/blog/2017/04/08/uber-answer</id>
+    <content type="html"><![CDATA[<p>Today I gave a talk “Our answer to Uber” at United Dev Conf, Minsk.  Slides could be found at <a href="https://www.slideshare.net/AlexanderKorotkov/our-answer-to-uber/">slideshare</a>.  In my talk I attempted to make a review of <a href="https://eng.uber.com/mysql-migration/">Uber’s notes</a> and summarize community efforts to overcome highlighted shortcomings.</p>
+
+<p>United Dev Conf is quite big IT conference with more than 700 attendees.  I’d like to notice that interest in PostgreSQL is quire high.  The room was almost full during my talk.  Also, after the talk I was continuously giving answers to surroundings in about 1 hour.</p>
+
+<p>I think that Minsk is very attractive place for IT events.  There are everything required for it: lovely places for events, good and not expensive hotels, developed infrastructure.  Additionally Belarus introduces 5 days visa-free travel for <a href="http://www.belarus.by/en/press-center/news/belarus-introduces-visa-free-travel-for-80-countries_i_0000052902.html">80 countries</a>, and that made conference attendance much easier for many people.  It would be nice to have PGDay.Minsk one day.</p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[PostgreSQL 9.6 Release Is Approaching. Postgres Pro Has Contributed to It.]]></title>

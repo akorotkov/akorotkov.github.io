@@ -120,6 +120,48 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-04-08T00:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Sat  8 Apr 2017, 12:20 AM</time>
+        
+      </p>
+    
+    
+      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2017/04/08/uber-answer/" itemprop="url">"Our Answer to Uber" Talk at United Dev Conf, Minsk</a></h2>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Today I gave a talk “Our answer to Uber” at United Dev Conf, Minsk.  Slides could be found at <a href="https://www.slideshare.net/AlexanderKorotkov/our-answer-to-uber/">slideshare</a>.  In my talk I attempted to make a review of <a href="https://eng.uber.com/mysql-migration/">Uber’s notes</a> and summarize community efforts to overcome highlighted shortcomings.</p>
+
+<p>United Dev Conf is quite big IT conference with more than 700 attendees.  I’d like to notice that interest in PostgreSQL is quire high.  The room was almost full during my talk.  Also, after the talk I was continuously giving answers to surroundings in about 1 hour.</p>
+
+<p>I think that Minsk is very attractive place for IT events.  There are everything required for it: lovely places for events, good and not expensive hotels, developed infrastructure.  Additionally Belarus introduces 5 days visa-free travel for <a href="http://www.belarus.by/en/press-center/news/belarus-introduces-visa-free-travel-for-80-countries_i_0000052902.html">80 countries</a>, and that made conference attendance much easier for many people.  It would be nice to have PGDay.Minsk one day.</p>
+
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-09-29T16:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Thu 29 Sep 2016,  4:20 PM</time>
         
       </p>
@@ -658,90 +700,6 @@ with filter conditions while dealing with PostgreSQL inheritance mechanism.</p>
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-uppercase">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-04T17:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri  4 Mar 2016,  5:10 PM</time>
-        
-      </p>
-    
-    
-      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2016/03/04/pg_pathman-beta-release/" itemprop="url">Pg_pathman Beta Release</a></h2>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border" src="/images/partitiontable.jpg" width="640" height="373" /></p>
-
-<p>Partitioning in PostgreSQL is traditionally implemented using <a href="http://www.postgresql.org/docs/9.5/static/ddl-partitioning.html">table
-inheritance</a>.
-Table inheritance allow planner to include into plan only those child tables
-(partitions) which are compatible with query.  Simultaneously a lot of work on
-partitions management remains on users: create inherited tables, writing trigger
-which selects appropriate partition for row inserting etc.  In order to automate
-this work pg_partman extension was written.  Also, there is upcoming work on
-<a href="http://www.postgresql.org/message-id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a>
-by Amit Langote for PostgreSQL core.</p>
-
-<p>In Postgres Professional we notice performance problem of inheritance based
-partitioning.  The problem is that planner selects children tables compatible
-with query by linear scan.  Thus, for query which selects just one row from one
-partition it would be much slower to plan than to execute.  This fact
-discourages many users and this is why we’re working on new PostgreSQL
-extension: <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a>.</p>
-
-<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> caches partitions
-meta-information and uses set_rel_pathlist hook in order to replace mechanism of
-child tables selection by its own mechanism.  Thanks to this binary search
-algorithm over sorted array is used for range partitioning and hash table
-lookup for hash partitioning.  Therefore, time spent to partition selection
-appears to be negligible in comparison with forming of result plan nodes.  See
-<a href="http://www.postgrespro.com/blog/pgsql/pg_pathman">postgrespro blog post</a> for
-performance benchmarks.</p>
-
-<p><a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> now in beta-release
-status and we encourage all interested users to try it and give us a feedback.
-pg_pathman is compatible with PostgreSQL 9.5 and distributed under PostgreSQL
-license.  In the future we’re planning to enhance functionality of pg_pathman
-by following features.</p>
-
-<ul>
-  <li>Execute time selection of partitions using custom nodes (useful for nested
-loops and prepared statements);</li>
-  <li>Optimization of ordering output from partitioned tables (useful for merge
-join and order by);</li>
-  <li>Optimization of hash join when both tables are partitioned by join key;</li>
-  <li>LIST-partitioning;</li>
-  <li>HASH-partitioning by attributes of any hashable type.</li>
-</ul>
-
-<p>Despite we have pg_pathman useful here and now, we want this functionality to
-eventually become part of PostgreSQL core.  This is why we are going to join
-work on declarative partitioning by Amit Langote which have excellent DDL
-infrastructure and fulfill it with effective internal algorithms.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -765,6 +723,8 @@ infrastructure and fulfill it with effective internal algorithms.</p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/2017/04/08/uber-answer/">"Our Answer to Uber" Talk at United Dev Conf, Minsk</a>
+    
     <a class="list-group-item " href="/blog/2016/09/29/release-9-6/">PostgreSQL 9.6 Release Is Approaching. Postgres Pro Has Contributed to It.</a>
     
     <a class="list-group-item " href="/blog/2016/06/17/faceted-search/">Faceted Search in the Single PostgreSQL Query</a>
@@ -772,8 +732,6 @@ infrastructure and fulfill it with effective internal algorithms.</p>
     <a class="list-group-item " href="/blog/2016/06/15/pg_pathman-runtime-append/">RuntimeAppend in Pg_pathman: Achievements and New Challenges</a>
     
     <a class="list-group-item " href="/blog/2016/06/09/psql-graph/">Drawing Graphs Directly in Psql</a>
-    
-    <a class="list-group-item " href="/blog/2016/05/09/scalability-towards-millions-tps/">PostgreSQL Scalability: Towards Millions TPS</a>
     
   </div>
 </section>
@@ -793,7 +751,7 @@ infrastructure and fulfill it with effective internal algorithms.</p>
     </div>
     <footer role="contentinfo"><div class="container">
     <p class="text-muted credits">
-  Copyright &copy; 2016 - Alexander Korotkov<br>
+  Copyright &copy; 2017 - Alexander Korotkov<br>
   <small>
       <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
       <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
