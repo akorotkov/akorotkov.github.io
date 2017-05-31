@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Index | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/index/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2017-05-31T18:44:17+03:00</updated>
+  <updated>2017-05-31T18:46:50+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -70,7 +70,7 @@
 </span><span class='line'>         <span class="k">Index</span> <span class="n">Cond</span><span class="p">:</span> <span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="err">‘</span><span class="mi">0</span><span class="p">.</span><span class="mi">01</span><span class="err">’</span><span class="p">::</span><span class="n">double</span> <span class="k">precision</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure></p>
 
-<p>Besides index get used for this query, there is way more accurate estimate for the number of rows selected by qual <code>x + y</code>.  Estimation is improved because PostgreSQL is now gathering separate statistics for <code>x + y</code> expression.  You can check that by querying a system catalog.</p>
+<p>Besides index get used for this query, there is way more accurate estimate for the number of rows selected by <code>x + y &lt; 0.01</code>.  Estimation is improved because PostgreSQL is now gathering separate statistics for <code>x + y</code> expression.  You can check that by querying a system catalog.</p>
 
 <p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
