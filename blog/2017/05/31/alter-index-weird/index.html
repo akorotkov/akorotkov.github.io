@@ -217,7 +217,7 @@
 </span><span class="line"><span class="n">elem_count_histogram</span>   <span class="o">|</span> <span class="k">NULL</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<p>So, there are histogram, most common values and etc for <code>x + y</code> expression, and that leads to more accurate selectivity estimation for <code>x + y &lt; 0.01</code>.  However, there is still and 1 order of degree error (641 rows estimated instead of 56).  Could we improve that?  Yes, PostgreSQL have statistics-gathering target parameter which is tunable per column using <a href="https://www.postgresql.org/docs/current/static/sql-altertable.html">ALTER TABLE … SET STATISTICS …</a> command.  Using this command, you may tune size of statistics arrays.</p>
+<p>So, there are histogram, most common values and etc for <code>x + y</code> expression, and that leads to more accurate selectivity estimation for <code>x + y &lt; 0.01</code>.  However, there is still and 1 order of degree error (641 rows estimated instead of 56).  Could we improve that?  Yes, PostgreSQL have statistics-gathering target parameter whose is tunable per column using <a href="https://www.postgresql.org/docs/current/static/sql-altertable.html">ALTER TABLE … SET STATISTICS …</a> command.  Using this command, you may tune size of statistics arrays.</p>
 
 <p>But, uhhhh, in our case we have no column, we have an indexed expression.  That appears to be a problem since there is no documented way to tune statistic target for that…</p>
 
