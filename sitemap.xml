@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://akorotkov.github.io/blog/2017/05/31/alter-index-weird/</loc>
+    <lastmod>2017-05-31T18:20:00+03:00</lastmod>
+  </url>
+  <url>
     <loc>http://akorotkov.github.io/blog/2017/04/08/uber-answer/</loc>
+    <lastmod>2017-04-08T00:20:00+03:00</lastmod>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/2017/04/08/rum-extension/</loc>
     <lastmod>2017-04-08T00:20:00+03:00</lastmod>
   </url>
   <url>
@@ -149,6 +157,12 @@
     <loc>http://akorotkov.github.io/blog/categories/9-dot-6/</loc>
   </url>
   <url>
+    <loc>http://akorotkov.github.io/blog/categories/rum/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/extension/</loc>
+  </url>
+  <url>
     <loc>http://akorotkov.github.io/blog/categories/uber/</loc>
   </url>
   <url>
@@ -156,5 +170,11 @@
   </url>
   <url>
     <loc>http://akorotkov.github.io/blog/categories/minsk/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/index/</loc>
+  </url>
+  <url>
+    <loc>http://akorotkov.github.io/blog/categories/weird/</loc>
   </url>
 </urlset>

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Benchmark | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/benchmark/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2017-04-08T00:20:23+03:00</updated>
+  <updated>2017-05-31T18:18:32+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -74,7 +74,7 @@ memory structures. As result performance has significant variety depending on
 shared_buffers, max_connections and other options which influence shared memory
 distribution.  When I gave Andres access to that big machine, he very quickly
 find a way to take care about performance irregularity:
-<a href="http://www.postgresql.org/message-id/20160411214029.ce3fw6zxim5k6a2r@alap3.anarazel.de">make all PGXACTs full cacheline aligned</a>.
+<a href="http://www.postgresql.org/message-id/flat/20160411214029.ce3fw6zxim5k6a2r@alap3.anarazel.de">make all PGXACTs full cacheline aligned</a>.
 Without this patch SnapshotResetXmin() dirties processor cache containing
 multiple PGXACTs.  With this patch SnapshotResetXmin() dirties cacheline with
 only single PGXACT.  Thus, GetSnapshotData() have much less cache misses.

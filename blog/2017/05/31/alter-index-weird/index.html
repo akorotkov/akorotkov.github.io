@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ALTER INDEX ... SET STATISTICS ...??? - Alexander Korotkov's blog</title>
+  <meta name="author" content="Alexander Korotkov">
+
+  
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://akorotkov.github.io/blog/2017/05/31/alter-index-weird/">
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link href="/atom.xml" rel="alternate" title="Alexander Korotkov's blog" type="application/atom+xml">
+
+  <!-- http://opengraphprotocol.org/ -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="http://akorotkov.github.io/blog/2017/05/31/alter-index-weird/">
+  <meta property="og:title" content="ALTER INDEX ... SET STATISTICS ...??? - Alexander Korotkov's blog">
+  
+
+  <script src="/javascripts/libs/jquery/jquery-2.1.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection, print" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+  <body   >
+    <a href="#content" class="sr-only sr-only-focusable">Skip to main content</a>
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" title="toggle navbar" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Alexander Korotkov's blog</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li>
+                    <a href="http://postgrespro.com">Postgres Professional company</a>
+                </li>
+                <li>
+                    <a href="/about">About me</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="/atom.xml" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="navbar-form navbar-right" action="https://www.google.com/search" method="GET">
+                    <input type="hidden" name="sitesearch" value="akorotkov.github.io">
+                    <div class="form-group">
+                        <input class="form-control" type="text" name="q" placeholder="Search">
+                    </div>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" role="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Alexander Korotkov's blog" />
+    
+    <meta itemprop="url" content="http://akorotkov.github.io" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-05-31T18:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Wed 31 May 2017,  6:20 PM</time>
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        ALTER INDEX ... SET STATISTICS ...???
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody description"><p>It’s not very widely known, but PostgreSQL is gathering statistics for indexed expressions.  See following example.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">test</span> <span class="k">AS</span> <span class="p">(</span><span class="k">SELECT</span> <span class="n">random</span><span class="p">()</span> <span class="n">x</span><span class="p">,</span> <span class="n">random</span><span class="p">()</span> <span class="n">y</span> <span class="k">FROM</span> <span class="n">generate_series</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1000000</span><span class="p">));</span>
+</span><span class="line"><span class="k">ANALYZE</span> <span class="n">test</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">EXPLAIN</span> <span class="k">ANALYZE</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">test</span> <span class="k">WHERE</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">.</span><span class="mi">01</span><span class="p">;</span>
+</span><span class="line">                                                <span class="n">QUERY</span> <span class="n">PLAN</span>
+</span><span class="line"><span class="c1">-----------------------------------------------------------------------------------------------------------</span>
+</span><span class="line"> <span class="n">Seq</span> <span class="n">Scan</span> <span class="k">on</span> <span class="n">test</span>  <span class="p">(</span><span class="n">cost</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">00</span><span class="p">..</span><span class="mi">20406</span><span class="p">.</span><span class="mi">00</span> <span class="k">rows</span><span class="o">=</span><span class="mi">333333</span> <span class="n">width</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="n">time</span><span class="o">=</span><span class="mi">1</span><span class="p">.</span><span class="mi">671</span><span class="p">..</span><span class="mi">113</span><span class="p">.</span><span class="mi">693</span> <span class="k">rows</span><span class="o">=</span><span class="mi">56</span> <span class="n">loops</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class="line">   <span class="n">Filter</span><span class="p">:</span> <span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="o">&lt;</span> <span class="s1">&#39;0.01&#39;</span><span class="p">::</span><span class="n">double</span> <span class="k">precision</span><span class="p">)</span>
+</span><span class="line">   <span class="k">Rows</span> <span class="n">Removed</span> <span class="k">by</span> <span class="n">Filter</span><span class="p">:</span> <span class="mi">999944</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>We created table with two columns <code>x</code> and <code>y</code> which values are independently and uniformly distributed from 0 to 1.  Despite we analyze that table, PostgreSQL optimizer estimates selectivity of <code>x + y &lt; 0.01</code> qual as 1/3.  You can see that this estimation is not even close to reality: we actually selected 56 rows instead of 333333 rows estimated.  This estimation comes from a rough assumption that <code>&lt;</code> operator selects 1/3 of rows unless something more precise is known.  Of course, it could be possible for planner to do something better in this case.  For instance, it could try to calculate histogram for <code>x + y</code> from the separate histograms for <code>x</code> and <code>y</code>.  However, PostgreSQL optimizer doesn’t perform such costly and complex computations for now.</p>
+
+<p>Situation changes once we define an index on <code>x + y</code>.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">test_idx</span> <span class="k">ON</span> <span class="n">test</span> <span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">));</span>
+</span><span class="line"><span class="k">ANALYZE</span> <span class="n">test</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">EXPLAIN</span> <span class="k">ANALYZE</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">test</span> <span class="k">WHERE</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">.</span><span class="mi">01</span><span class="p">;</span>
+</span><span class="line">                                                     <span class="n">QUERY</span> <span class="n">PLAN</span>
+</span><span class="line"><span class="c1">---------------------------------------------------------------------------------------------------------------------</span>
+</span><span class="line"> <span class="n">Bitmap</span> <span class="n">Heap</span> <span class="n">Scan</span> <span class="k">on</span> <span class="n">test</span>  <span class="p">(</span><span class="n">cost</span><span class="o">=</span><span class="mi">13</span><span class="p">.</span><span class="mi">39</span><span class="p">..</span><span class="mi">1838</span><span class="p">.</span><span class="mi">32</span> <span class="k">rows</span><span class="o">=</span><span class="mi">641</span> <span class="n">width</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">040</span><span class="p">..</span><span class="mi">0</span><span class="p">.</span><span class="mi">107</span> <span class="k">rows</span><span class="o">=</span><span class="mi">56</span> <span class="n">loops</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class="line">   <span class="k">Recheck</span> <span class="n">Cond</span><span class="p">:</span> <span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="o">&lt;</span> <span class="s1">&#39;0.01&#39;</span><span class="p">::</span><span class="n">double</span> <span class="k">precision</span><span class="p">)</span>
+</span><span class="line">   <span class="n">Heap</span> <span class="n">Blocks</span><span class="p">:</span> <span class="n">exact</span><span class="o">=</span><span class="mi">56</span>
+</span><span class="line">   <span class="o">-&gt;</span>  <span class="n">Bitmap</span> <span class="k">Index</span> <span class="n">Scan</span> <span class="k">on</span> <span class="n">test_idx</span>  <span class="p">(</span><span class="n">cost</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">00</span><span class="p">..</span><span class="mi">13</span><span class="p">.</span><span class="mi">23</span> <span class="k">rows</span><span class="o">=</span><span class="mi">641</span> <span class="n">width</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">028</span><span class="p">..</span><span class="mi">0</span><span class="p">.</span><span class="mi">028</span> <span class="k">rows</span><span class="o">=</span><span class="mi">56</span> <span class="n">loops</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class="line">         <span class="k">Index</span> <span class="n">Cond</span><span class="p">:</span> <span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="o">&lt;</span> <span class="s1">&#39;0.01&#39;</span><span class="p">::</span><span class="n">double</span> <span class="k">precision</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Besides index get used for this query, there is way more accurate estimate for the number of rows selected by qual <code>x + y</code>.  Estimation is improved because PostgreSQL is now gathering separate statistics for <code>x + y</code> expression.  You can check that by querying a system catalog.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">pg_stats</span> <span class="k">WHERE</span> <span class="n">tablename</span> <span class="o">=</span> <span class="s1">&#39;test_idx&#39;</span><span class="p">;</span>
+</span><span class="line"><span class="o">-</span><span class="p">[</span> <span class="n">RECORD</span> <span class="mi">1</span> <span class="p">]</span><span class="c1">----------+--------------------------------------------------------------------------------------------------------------------------------------------</span>
+</span><span class="line"><span class="n">schemaname</span>             <span class="o">|</span> <span class="k">public</span>
+</span><span class="line"><span class="n">tablename</span>              <span class="o">|</span> <span class="n">test_idx</span>
+</span><span class="line"><span class="n">attname</span>                <span class="o">|</span> <span class="n">expr</span>
+</span><span class="line"><span class="n">inherited</span>              <span class="o">|</span> <span class="n">f</span>
+</span><span class="line"><span class="n">null_frac</span>              <span class="o">|</span> <span class="mi">0</span>
+</span><span class="line"><span class="n">avg_width</span>              <span class="o">|</span> <span class="mi">8</span>
+</span><span class="line"><span class="n">n_distinct</span>             <span class="o">|</span> <span class="o">-</span><span class="mi">0</span><span class="p">.</span><span class="mi">999863</span>
+</span><span class="line"><span class="n">most_common_vals</span>       <span class="o">|</span> <span class="err">{</span><span class="mi">0</span><span class="p">.</span><span class="mi">262215601745993</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">319712610449642</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">3959802063182</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">404356196057051</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">40578526025638</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">437070866115391</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">462984828744084</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">4651908758096</span>
+</span><span class="line"><span class="n">most_common_freqs</span>      <span class="o">|</span> <span class="err">{</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span>
+</span><span class="line"><span class="n">histogram_bounds</span>       <span class="o">|</span> <span class="err">{</span><span class="mi">0</span><span class="p">.</span><span class="mi">00104234321042895</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">0141074191778898</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">0200657406821847</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">0247588600032032</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">0284962640143931</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">0315022920258343</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">0346860070712864</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">03</span>
+</span><span class="line"><span class="n">correlation</span>            <span class="o">|</span> <span class="o">-</span><span class="mi">0</span><span class="p">.</span><span class="mi">00176553</span>
+</span><span class="line"><span class="n">most_common_elems</span>      <span class="o">|</span> <span class="k">NULL</span>
+</span><span class="line"><span class="n">most_common_elem_freqs</span> <span class="o">|</span> <span class="k">NULL</span>
+</span><span class="line"><span class="n">elem_count_histogram</span>   <span class="o">|</span> <span class="k">NULL</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>So, there are histogram, most common values and etc for <code>x + y</code> expression, and that leads to more accurate selectivity estimation for <code>x + y &lt; 0.01</code>.  However, there is still and 1 order of degree error (641 rows estimated instead of 56).  Could we improve that?  Yes, PostgreSQL have statistics-gathering target parameter which is tunable per column using <a href="https://www.postgresql.org/docs/current/static/sql-altertable.html">ALTER TABLE … SET STATISTICS …</a> command.  Using this command, you may tune size of statistics arrays.</p>
+
+<p>But, uhhhh, in our case we have no column, we have an indexed expression.  That appears to be a problem since there is no documented way to tune statistic target for that…</p>
+
+<p>Nevertheless, it appears to be possible.  There is a gotcha which allows advanced DBAs to do that.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="k">ALTER</span> <span class="k">INDEX</span> <span class="n">test_idx</span> <span class="k">ALTER</span> <span class="k">COLUMN</span> <span class="n">expr</span> <span class="k">SET</span> <span class="k">STATISTICS</span> <span class="mi">10000</span><span class="p">;</span>
+</span><span class="line"><span class="k">ANALYZE</span> <span class="n">test</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">EXPLAIN</span> <span class="k">ANALYZE</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">test</span> <span class="k">WHERE</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">.</span><span class="mi">01</span><span class="p">;</span>
+</span><span class="line">                                                    <span class="n">QUERY</span> <span class="n">PLAN</span>
+</span><span class="line"><span class="c1">-------------------------------------------------------------------------------------------------------------------</span>
+</span><span class="line"> <span class="n">Bitmap</span> <span class="n">Heap</span> <span class="n">Scan</span> <span class="k">on</span> <span class="n">test</span>  <span class="p">(</span><span class="n">cost</span><span class="o">=</span><span class="mi">4</span><span class="p">.</span><span class="mi">96</span><span class="p">..</span><span class="mi">258</span><span class="p">.</span><span class="mi">61</span> <span class="k">rows</span><span class="o">=</span><span class="mi">69</span> <span class="n">width</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">022</span><span class="p">..</span><span class="mi">0</span><span class="p">.</span><span class="mi">074</span> <span class="k">rows</span><span class="o">=</span><span class="mi">56</span> <span class="n">loops</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class="line">   <span class="k">Recheck</span> <span class="n">Cond</span><span class="p">:</span> <span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="o">&lt;</span> <span class="s1">&#39;0.01&#39;</span><span class="p">::</span><span class="n">double</span> <span class="k">precision</span><span class="p">)</span>
+</span><span class="line">   <span class="n">Heap</span> <span class="n">Blocks</span><span class="p">:</span> <span class="n">exact</span><span class="o">=</span><span class="mi">56</span>
+</span><span class="line">   <span class="o">-&gt;</span>  <span class="n">Bitmap</span> <span class="k">Index</span> <span class="n">Scan</span> <span class="k">on</span> <span class="n">test_idx</span>  <span class="p">(</span><span class="n">cost</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">00</span><span class="p">..</span><span class="mi">4</span><span class="p">.</span><span class="mi">94</span> <span class="k">rows</span><span class="o">=</span><span class="mi">69</span> <span class="n">width</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">014</span><span class="p">..</span><span class="mi">0</span><span class="p">.</span><span class="mi">014</span> <span class="k">rows</span><span class="o">=</span><span class="mi">56</span> <span class="n">loops</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class="line">         <span class="k">Index</span> <span class="n">Cond</span><span class="p">:</span> <span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="o">&lt;</span> <span class="s1">&#39;0.01&#39;</span><span class="p">::</span><span class="n">double</span> <span class="k">precision</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>That works.  When we collect statistic arrays of 10000 size, estimate becomes 69 rows.  It’s only 23% estimation error which is more than good enough for query planning.</p>
+
+<p>But… What the hell is <code>ALTER INDEX ... SET STATISTICS ...</code>?!  There is nothing like this in PostgreSQL documentation!</p>
+
+<p>Let’s understand this situation step by step.</p>
+
+<ol>
+  <li><code>ALTER INDEX</code> and <code>ALTER TABLE</code> share the same bison rule.</li>
+  <li>Cases when <code>ALTER INDEX</code> is not applicable are filtered runtime.</li>
+  <li><code>ALTER INDEX ... SET STATISTICS ...</code> is not forbidden and works the same way as <code>ALTER TABLE ... SET STATISTICS ...</code> does.</li>
+  <li>Indexed expressions are internally named as attributes: <code>expr</code>, <code>expr1</code>, <code>expr2</code> …</li>
+</ol>
+
+<p>There was <a href="http://www.postgresql.org/message-id/flat/3677.1437057873%40sss.pgh.pa.us">some short discussion</a> about that in pgsql-hackers mailing lists.  The conclusion was that this should be documented, but it’s not yet done.  I also think that we should invent some better syntax for that instead of usage of internal column names.</p>
+</div>
+
+
+      <footer>
+        <p class="meta text-muted">
+          
+  
+
+<span class="glyphicon glyphicon-user"></span> <span class="byline author vcard" itemprop="author" itemscope itemtype="http://schema.org/Person">Posted by <span class="fn" itemprop="name">Alexander Korotkov</span></span>
+
+          
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-05-31T18:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Wed 31 May 2017,  6:20 PM</time>
+          
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp;
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/index/'>index</a>, <a class='category' href='/blog/categories/pg/'>pg</a>, <a class='category' href='/blog/categories/stats/'>stats</a>, <a class='category' href='/blog/categories/weird/'>weird</a>
+  
+</span>
+
+
+        </p>
+        
+          <div class="sharing">
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/2017/04/08/uber-answer/" title="Previous Post: "Our answer to Uber" talk at United Dev Conf, Minsk">&laquo; "Our answer to Uber" talk at United Dev Conf, Minsk</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h2>Comments</h2>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      <section class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Recent Posts</h3>
+  </div>
+  
+  <div id="recent_posts" class="list-group">
+    
+    <a class="list-group-item active" href="/blog/2017/05/31/alter-index-weird/">ALTER INDEX ... SET STATISTICS ...???</a>
+    
+    <a class="list-group-item " href="/blog/2017/04/08/uber-answer/">"Our Answer to Uber" Talk at United Dev Conf, Minsk</a>
+    
+    <a class="list-group-item " href="/blog/2017/04/08/rum-extension/">Why RUM Is an Extension?</a>
+    
+    <a class="list-group-item " href="/blog/2016/09/29/release-9-6/">PostgreSQL 9.6 Release Is Approaching. Postgres Pro Has Contributed to It.</a>
+    
+    <a class="list-group-item " href="/blog/2016/06/17/faceted-search/">Faceted Search in the Single PostgreSQL Query</a>
+    
+  </div>
+</section>
+
+
+
+
+
+
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2017 - Alexander Korotkov<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'akorotkov';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://akorotkov.github.io/blog/2017/05/31/alter-index-weird/';
+        var disqus_url = 'http://akorotkov.github.io/blog/2017/05/31/alter-index-weird/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr.js"></script>
+<script src="/javascripts/retina.js"></script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-77524230-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

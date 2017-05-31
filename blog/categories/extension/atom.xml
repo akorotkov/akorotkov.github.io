@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Extension | Alexander Korotkov's blog]]></title>
+  <link href="http://akorotkov.github.io/blog/categories/extension/atom.xml" rel="self"/>
+  <link href="http://akorotkov.github.io/"/>
+  <updated>2017-05-31T18:18:32+03:00</updated>
+  <id>http://akorotkov.github.io/</id>
+  <author>
+    <name><![CDATA[Alexander Korotkov]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Why RUM Is an Extension?]]></title>
+    <link href="http://akorotkov.github.io/blog/2017/04/08/rum-extension/"/>
+    <updated>2017-04-08T00:20:00+03:00</updated>
+    <id>http://akorotkov.github.io/blog/2017/04/08/rum-extension</id>
+    <content type="html"><![CDATA[<p>RUM is an index access method provided as an extension for PostgreSQL 9.6+.  Major difference between RUM and GIN is that RUM allows to do ranking inside index scan rather than caculate ranks from heap.  Thus, RUM allows to accelerate fulltext search queries in times in comparison to GIN.</p>
+
+<p>The frequent user complaint on RUM is that it’s still an extension.  Naturally, there is a set of restrictions.  For instance, RUM is unavailable on DBPaaSes (database platform as a service) like Amazon RDS or Heroku.  Additionally, generic WAL mechanism is not as efficient as builtin WAL.</p>
+
+<p>There are two major differences between GIN and RUM:</p>
+
+<h1 id="rum-allows-storage-of-additional-information-in-posting-listtrees">RUM allows storage of additional information in posting list/trees.</h1>
+<p># RUM does sorting</p>
+
+]]></content>
+  </entry>
+  
+</feed>

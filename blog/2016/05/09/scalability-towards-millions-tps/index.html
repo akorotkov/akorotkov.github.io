@@ -185,7 +185,7 @@ memory structures. As result performance has significant variety depending on
 shared_buffers, max_connections and other options which influence shared memory
 distribution.  When I gave Andres access to that big machine, he very quickly
 find a way to take care about performance irregularity:
-<a href="http://www.postgresql.org/message-id/20160411214029.ce3fw6zxim5k6a2r@alap3.anarazel.de">make all PGXACTs full cacheline aligned</a>.
+<a href="http://www.postgresql.org/message-id/flat/20160411214029.ce3fw6zxim5k6a2r@alap3.anarazel.de">make all PGXACTs full cacheline aligned</a>.
 Without this patch SnapshotResetXmin() dirties processor cache containing
 multiple PGXACTs.  With this patch SnapshotResetXmin() dirties cacheline with
 only single PGXACT.  Thus, GetSnapshotData() have much less cache misses.
@@ -283,15 +283,15 @@ YUriy Zhuravlev who wrote original proof of concept of this patch;</li>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/2017/05/31/alter-index-weird/">ALTER INDEX ... SET STATISTICS ...???</a>
+    
     <a class="list-group-item " href="/blog/2017/04/08/uber-answer/">"Our Answer to Uber" Talk at United Dev Conf, Minsk</a>
+    
+    <a class="list-group-item " href="/blog/2017/04/08/rum-extension/">Why RUM Is an Extension?</a>
     
     <a class="list-group-item " href="/blog/2016/09/29/release-9-6/">PostgreSQL 9.6 Release Is Approaching. Postgres Pro Has Contributed to It.</a>
     
     <a class="list-group-item " href="/blog/2016/06/17/faceted-search/">Faceted Search in the Single PostgreSQL Query</a>
-    
-    <a class="list-group-item " href="/blog/2016/06/15/pg_pathman-runtime-append/">RuntimeAppend in Pg_pathman: Achievements and New Challenges</a>
-    
-    <a class="list-group-item " href="/blog/2016/06/09/psql-graph/">Drawing Graphs Directly in Psql</a>
     
   </div>
 </section>

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Partitioning | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/partitioning/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2017-04-08T00:20:23+03:00</updated>
+  <updated>2017-05-31T18:18:32+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -514,7 +514,7 @@ Table inheritance allow planner to include into plan only those child tables
 partitions management remains on users: create inherited tables, writing trigger
 which selects appropriate partition for row inserting etc.  In order to automate
 this work pg_partman extension was written.  Also, there is upcoming work on
-<a href="http://www.postgresql.org/message-id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a>
+<a href="http://www.postgresql.org/message-id/flat/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a>
 by Amit Langote for PostgreSQL core.</p>
 
 <p>In Postgres Professional we notice performance problem of inheritance based
