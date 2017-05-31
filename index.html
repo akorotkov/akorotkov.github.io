@@ -156,112 +156,12 @@
 
 <p>Situation changes once we define an index on <code>x + y</code>.</p>
 
-<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">test_idx</span> <span class="k">ON</span> <span class="n">test</span> <span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">));</span>
-</span><span class="line"><span class="k">ANALYZE</span> <span class="n">test</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line"><span class="k">EXPLAIN</span> <span class="k">ANALYZE</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">test</span> <span class="k">WHERE</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">.</span><span class="mi">01</span><span class="p">;</span>
-</span><span class="line">                                                     <span class="n">QUERY</span> <span class="n">PLAN</span>
-</span><span class="line"><span class="c1">---------------------------------------------------------------------------------------------------------------------</span>
-</span><span class="line"> <span class="n">Bitmap</span> <span class="n">Heap</span> <span class="n">Scan</span> <span class="k">on</span> <span class="n">test</span>  <span class="p">(</span><span class="n">cost</span><span class="o">=</span><span class="mi">13</span><span class="p">.</span><span class="mi">39</span><span class="p">..</span><span class="mi">1838</span><span class="p">.</span><span class="mi">32</span> <span class="k">rows</span><span class="o">=</span><span class="mi">641</span> <span class="n">width</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">040</span><span class="p">..</span><span class="mi">0</span><span class="p">.</span><span class="mi">107</span> <span class="k">rows</span><span class="o">=</span><span class="mi">56</span> <span class="n">loops</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-</span><span class="line">   <span class="k">Recheck</span> <span class="n">Cond</span><span class="p">:</span> <span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="o">&lt;</span> <span class="s1">&#39;0.01&#39;</span><span class="p">::</span><span class="n">double</span> <span class="k">precision</span><span class="p">)</span>
-</span><span class="line">   <span class="n">Heap</span> <span class="n">Blocks</span><span class="p">:</span> <span class="n">exact</span><span class="o">=</span><span class="mi">56</span>
-</span><span class="line">   <span class="o">-&gt;</span>  <span class="n">Bitmap</span> <span class="k">Index</span> <span class="n">Scan</span> <span class="k">on</span> <span class="n">test_idx</span>  <span class="p">(</span><span class="n">cost</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">00</span><span class="p">..</span><span class="mi">13</span><span class="p">.</span><span class="mi">23</span> <span class="k">rows</span><span class="o">=</span><span class="mi">641</span> <span class="n">width</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">028</span><span class="p">..</span><span class="mi">0</span><span class="p">.</span><span class="mi">028</span> <span class="k">rows</span><span class="o">=</span><span class="mi">56</span> <span class="n">loops</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-</span><span class="line">         <span class="k">Index</span> <span class="n">Cond</span><span class="p">:</span> <span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="o">&lt;</span> <span class="s1">&#39;0.01&#39;</span><span class="p">::</span><span class="n">double</span> <span class="k">precision</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Besides index get used for this query, there is way more accurate estimate for the number of rows selected by qual <code>x + y</code>.  Estimation is improved because PostgreSQL is now gathering separate statistics for <code>x + y</code> expression.  You can check that by querying a system catalog.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">pg_stats</span> <span class="k">WHERE</span> <span class="n">tablename</span> <span class="o">=</span> <span class="s1">&#39;test_idx&#39;</span><span class="p">;</span>
-</span><span class="line"><span class="o">-</span><span class="p">[</span> <span class="n">RECORD</span> <span class="mi">1</span> <span class="p">]</span><span class="c1">----------+--------------------------------------------------------------------------------------------------------------------------------------------</span>
-</span><span class="line"><span class="n">schemaname</span>             <span class="o">|</span> <span class="k">public</span>
-</span><span class="line"><span class="n">tablename</span>              <span class="o">|</span> <span class="n">test_idx</span>
-</span><span class="line"><span class="n">attname</span>                <span class="o">|</span> <span class="n">expr</span>
-</span><span class="line"><span class="n">inherited</span>              <span class="o">|</span> <span class="n">f</span>
-</span><span class="line"><span class="n">null_frac</span>              <span class="o">|</span> <span class="mi">0</span>
-</span><span class="line"><span class="n">avg_width</span>              <span class="o">|</span> <span class="mi">8</span>
-</span><span class="line"><span class="n">n_distinct</span>             <span class="o">|</span> <span class="o">-</span><span class="mi">0</span><span class="p">.</span><span class="mi">999863</span>
-</span><span class="line"><span class="n">most_common_vals</span>       <span class="o">|</span> <span class="err">{</span><span class="mi">0</span><span class="p">.</span><span class="mi">262215601745993</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">319712610449642</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">3959802063182</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">404356196057051</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">40578526025638</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">437070866115391</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">462984828744084</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">4651908758096</span>
-</span><span class="line"><span class="n">most_common_freqs</span>      <span class="o">|</span> <span class="err">{</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span><span class="mi">2</span><span class="n">e</span><span class="o">-</span><span class="mi">06</span><span class="p">,</span>
-</span><span class="line"><span class="n">histogram_bounds</span>       <span class="o">|</span> <span class="err">{</span><span class="mi">0</span><span class="p">.</span><span class="mi">00104234321042895</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">0141074191778898</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">0200657406821847</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">0247588600032032</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">0284962640143931</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">0315022920258343</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">0346860070712864</span><span class="p">,</span><span class="mi">0</span><span class="p">.</span><span class="mi">03</span>
-</span><span class="line"><span class="n">correlation</span>            <span class="o">|</span> <span class="o">-</span><span class="mi">0</span><span class="p">.</span><span class="mi">00176553</span>
-</span><span class="line"><span class="n">most_common_elems</span>      <span class="o">|</span> <span class="k">NULL</span>
-</span><span class="line"><span class="n">most_common_elem_freqs</span> <span class="o">|</span> <span class="k">NULL</span>
-</span><span class="line"><span class="n">elem_count_histogram</span>   <span class="o">|</span> <span class="k">NULL</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>So, there are histogram, most common values and etc for <code>x + y</code> expression, and that leads to more accurate selectivity estimation for <code>x + y &lt; 0.01</code>.  However, there is still and 1 order of degree error (641 rows estimated instead of 56).  Could we improve that?  Yes, PostgreSQL have statistics-gathering target parameter which is tunable per column using <a href="https://www.postgresql.org/docs/current/static/sql-altertable.html">ALTER TABLE … SET STATISTICS …</a> command.  Using this command, you may tune size of statistics arrays.</p>
-
-<p>But, uhhhh, in our case we have no column, we have an indexed expression.  That appears to be a problem since there is no documented way to tune statistic target for that…</p>
-
-<p>Nevertheless, it appears to be possible.  There is a gotcha which allows advanced DBAs to do that.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="k">ALTER</span> <span class="k">INDEX</span> <span class="n">test_idx</span> <span class="k">ALTER</span> <span class="k">COLUMN</span> <span class="n">expr</span> <span class="k">SET</span> <span class="k">STATISTICS</span> <span class="mi">10000</span><span class="p">;</span>
-</span><span class="line"><span class="k">ANALYZE</span> <span class="n">test</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line"><span class="k">EXPLAIN</span> <span class="k">ANALYZE</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">test</span> <span class="k">WHERE</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">.</span><span class="mi">01</span><span class="p">;</span>
-</span><span class="line">                                                    <span class="n">QUERY</span> <span class="n">PLAN</span>
-</span><span class="line"><span class="c1">-------------------------------------------------------------------------------------------------------------------</span>
-</span><span class="line"> <span class="n">Bitmap</span> <span class="n">Heap</span> <span class="n">Scan</span> <span class="k">on</span> <span class="n">test</span>  <span class="p">(</span><span class="n">cost</span><span class="o">=</span><span class="mi">4</span><span class="p">.</span><span class="mi">96</span><span class="p">..</span><span class="mi">258</span><span class="p">.</span><span class="mi">61</span> <span class="k">rows</span><span class="o">=</span><span class="mi">69</span> <span class="n">width</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">022</span><span class="p">..</span><span class="mi">0</span><span class="p">.</span><span class="mi">074</span> <span class="k">rows</span><span class="o">=</span><span class="mi">56</span> <span class="n">loops</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-</span><span class="line">   <span class="k">Recheck</span> <span class="n">Cond</span><span class="p">:</span> <span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="o">&lt;</span> <span class="s1">&#39;0.01&#39;</span><span class="p">::</span><span class="n">double</span> <span class="k">precision</span><span class="p">)</span>
-</span><span class="line">   <span class="n">Heap</span> <span class="n">Blocks</span><span class="p">:</span> <span class="n">exact</span><span class="o">=</span><span class="mi">56</span>
-</span><span class="line">   <span class="o">-&gt;</span>  <span class="n">Bitmap</span> <span class="k">Index</span> <span class="n">Scan</span> <span class="k">on</span> <span class="n">test_idx</span>  <span class="p">(</span><span class="n">cost</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">00</span><span class="p">..</span><span class="mi">4</span><span class="p">.</span><span class="mi">94</span> <span class="k">rows</span><span class="o">=</span><span class="mi">69</span> <span class="n">width</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">014</span><span class="p">..</span><span class="mi">0</span><span class="p">.</span><span class="mi">014</span> <span class="k">rows</span><span class="o">=</span><span class="mi">56</span> <span class="n">loops</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-</span><span class="line">         <span class="k">Index</span> <span class="n">Cond</span><span class="p">:</span> <span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="o">&lt;</span> <span class="s1">&#39;0.01&#39;</span><span class="p">::</span><span class="n">double</span> <span class="k">precision</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>That works.  When we collect statistic arrays of 10000 size, estimate becomes 69 rows.  It’s only 23% estimation error which is more than good enough for query planning.</p>
-
-<p>But… What the hell is <code>ALTER INDEX ... SET STATISTICS ...</code>?!  There is nothing like this in PostgreSQL documentation!</p>
-
-<p>Let’s understand this situation step by step.</p>
-
-<ol>
-  <li><code>ALTER INDEX</code> and <code>ALTER TABLE</code> share the same bison rule.</li>
-  <li>Cases when <code>ALTER INDEX</code> is not applicable are filtered runtime.</li>
-  <li><code>ALTER INDEX ... SET STATISTICS ...</code> is not forbidden and works the same way as <code>ALTER TABLE ... SET STATISTICS ...</code> does.</li>
-  <li>Indexed expressions are internally named as attributes: <code>expr</code>, <code>expr1</code>, <code>expr2</code> …</li>
-</ol>
-
-<p>There was <a href="http://www.postgresql.org/message-id/flat/3677.1437057873%40sss.pgh.pa.us">some short discussion</a> about that in pgsql-hackers mailing lists.  The conclusion was that this should be documented, but it’s not yet done.  I also think that we should invent some better syntax for that instead of usage of internal column names.</p>
 </div>
   
+  
+    <footer>
+      <a class="read-more btn btn-default" href="/blog/2017/05/31/alter-index-weird/">Read on &rarr;</a>
+    </footer>
   
 
 

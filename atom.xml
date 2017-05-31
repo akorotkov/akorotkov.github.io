@@ -4,7 +4,7 @@
   <title><![CDATA[Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2017-05-31T18:18:32+03:00</updated>
+  <updated>2017-05-31T18:21:03+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -43,6 +43,8 @@
 <p>We created table with two columns <code>x</code> and <code>y</code> which values are independently and uniformly distributed from 0 to 1.  Despite we analyze that table, PostgreSQL optimizer estimates selectivity of <code>x + y &lt; 0.01</code> qual as 1/3.  You can see that this estimation is not even close to reality: we actually selected 56 rows instead of 333333 rows estimated.  This estimation comes from a rough assumption that <code>&lt;</code> operator selects 1/3 of rows unless something more precise is known.  Of course, it could be possible for planner to do something better in this case.  For instance, it could try to calculate histogram for <code>x + y</code> from the separate histograms for <code>x</code> and <code>y</code>.  However, PostgreSQL optimizer doesn’t perform such costly and complex computations for now.</p>
 
 <p>Situation changes once we define an index on <code>x + y</code>.</p>
+
+<!--more-->
 
 <div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
