@@ -4,7 +4,7 @@
   <title><![CDATA[Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2017-05-31T18:48:28+03:00</updated>
+  <updated>2017-05-31T18:49:40+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -836,7 +836,7 @@ memory structures. As result performance has significant variety depending on
 shared_buffers, max_connections and other options which influence shared memory
 distribution.  When I gave Andres access to that big machine, he very quickly
 find a way to take care about performance irregularity:
-<a href="http://www.postgresql.org/message-id/flat/20160411214029.ce3fw6zxim5k6a2r@alap3.anarazel.de">make all PGXACTs full cacheline aligned</a>.
+<a href="http://www.postgresql.org/message-id/20160411214029.ce3fw6zxim5k6a2r@alap3.anarazel.de">make all PGXACTs full cacheline aligned</a>.
 Without this patch SnapshotResetXmin() dirties processor cache containing
 multiple PGXACTs.  With this patch SnapshotResetXmin() dirties cacheline with
 only single PGXACT.  Thus, GetSnapshotData() have much less cache misses.
@@ -1503,7 +1503,7 @@ Table inheritance allow planner to include into plan only those child tables
 partitions management remains on users: create inherited tables, writing trigger
 which selects appropriate partition for row inserting etc.  In order to automate
 this work pg_partman extension was written.  Also, there is upcoming work on
-<a href="http://www.postgresql.org/message-id/flat/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a>
+<a href="http://www.postgresql.org/message-id/55D3093C.5010800@lab.ntt.co.jp">declarative partitioning</a>
 by Amit Langote for PostgreSQL core.</p>
 
 <p>In Postgres Professional we notice performance problem of inheritance based
