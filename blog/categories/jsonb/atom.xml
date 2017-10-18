@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Jsonb | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/jsonb/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2017-05-31T18:49:40+03:00</updated>
+  <updated>2017-10-18T11:40:26+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -334,7 +334,19 @@ first, someone could easily put values into keys. Let me illustrate this on
 the following example: <code>products</code> becomes an object where article is used as
 a key.</p>
 
-    <p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+    <p>In this case we can find that cardinality of key paths are very high. Thus,
+we would be unable to collect suitable statistics for each key path.
+However, we could consider such situation as user mistake. Then we should
+advise users to restructure their documents.</p>
+
+    <p>There are still kind of documents, which don’t fit this model not because of
+user mistake but because of their nature. Imagine json formatted query plans
+stored in the table. Plans could have unlimited levels of nesting and
+correspondingly cardinality of key paths could be very high.</p>
+  </li>
+</ul>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -362,32 +374,23 @@ a key.</p>
 </span><span class='line'>  <span class="err">“address”:</span> <span class="err">“10021-3100,</span> <span class="err">21</span> <span class="err">2nd</span> <span class="err">Street,</span> <span class="err">New</span> <span class="err">York”,</span>
 </span><span class='line'>  <span class="err">“products”:</span>
 </span><span class='line'>  <span class="err">{</span>
-</span><span class='line'><span class="err">“XF56120”:</span>
-</span><span class='line'><span class="err">{</span>
-</span><span class='line'>  <span class="err">“name”:</span> <span class="err">“Sunglasses”,</span>
-</span><span class='line'>  <span class="err">“price”:</span> <span class="err">500,</span>
-</span><span class='line'>  <span class="err">“quantity”:</span> <span class="err">1</span>
-</span><span class='line'><span class="p">}</span><span class="err">,</span>
-</span><span class='line'><span class="err">“AT</span><span class="mi">10789</span><span class="err">”:</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="err">“name”:</span> <span class="err">“T-Shirt”,</span>
-</span><span class='line'>  <span class="err">“price”:</span> <span class="err">100,</span>
-</span><span class='line'>  <span class="err">“quantity”:</span> <span class="err">2</span>
-</span><span class='line'><span class="p">}</span>
+</span><span class='line'>    <span class="err">“XF56120”:</span>
+</span><span class='line'>    <span class="err">{</span>
+</span><span class='line'>      <span class="err">“name”:</span> <span class="err">“Sunglasses”,</span>
+</span><span class='line'>      <span class="err">“price”:</span> <span class="err">500,</span>
+</span><span class='line'>      <span class="err">“quantity”:</span> <span class="err">1</span>
+</span><span class='line'>    <span class="p">}</span><span class="err">,</span>
+</span><span class='line'>    <span class="err">“AT</span><span class="mi">10789</span><span class="err">”:</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="err">“name”:</span> <span class="err">“T-Shirt”,</span>
+</span><span class='line'>      <span class="err">“price”:</span> <span class="err">100,</span>
+</span><span class='line'>      <span class="err">“quantity”:</span> <span class="err">2</span>
+</span><span class='line'>    <span class="p">}</span>
 </span><span class='line'>  <span class="err">}</span>
 </span><span class='line'><span class="err">}</span>
 </span></code></pre></td></tr></table></div></figure></p>
 
-    <p>In this case we can find that cardinality of key paths are very high. Thus,
-we would be unable to collect suitable statistics for each key path.
-However, we could consider such situation as user mistake. Then we should
-advise users to restructure their documents.</p>
-
-    <p>There are still kind of documents, which don’t fit this model not because of
-user mistake but because of their nature. Imagine json formatted query plans
-stored in the table. Plans could have unlimited levels of nesting and
-correspondingly cardinality of key paths could be very high.</p>
-  </li>
+<ul>
   <li>
     <p>Some objects stored inside jsonb documents could require special statistics.
 For instance, point coordinates could be represented in json as

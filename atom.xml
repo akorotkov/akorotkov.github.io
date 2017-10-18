@@ -4,7 +4,7 @@
   <title><![CDATA[Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2017-05-31T18:49:40+03:00</updated>
+  <updated>2017-10-18T11:40:26+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -1869,7 +1869,19 @@ first, someone could easily put values into keys. Let me illustrate this on
 the following example: <code>products</code> becomes an object where article is used as
 a key.</p>
 
-    <div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+    <p>In this case we can find that cardinality of key paths are very high. Thus,
+we would be unable to collect suitable statistics for each key path.
+However, we could consider such situation as user mistake. Then we should
+advise users to restructure their documents.</p>
+
+    <p>There are still kind of documents, which don’t fit this model not because of
+user mistake but because of their nature. Imagine json formatted query plans
+stored in the table. Plans could have unlimited levels of nesting and
+correspondingly cardinality of key paths could be very high.</p>
+  </li>
+</ul>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
 <span class="line-number">4</span>
@@ -1890,11 +1902,7 @@ a key.</p>
 <span class="line-number">19</span>
 <span class="line-number">20</span>
 <span class="line-number">21</span>
-<span class="line-number">22</span>
-</pre></td></tr></table></div></figure></notextile></div>
-  </li>
-</ul>
-<p>&lt;/pre&gt;&lt;/td&gt;&lt;td class='code'&gt;&lt;pre&gt;<code class="json"><span class="line"><span class="p">{</span>
+</pre></td><td class="code"><pre><code class="json"><span class="line"><span class="p">{</span>
 </span><span class="line">  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
 </span><span class="line">  <span class="nt">&quot;contact&quot;</span><span class="p">:</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span>
 </span><span class="line">  <span class="nt">&quot;phone&quot;</span><span class="p">:</span> <span class="s2">&quot;212 555-1234&quot;</span><span class="p">,</span>
@@ -1915,19 +1923,7 @@ a key.</p>
 </span><span class="line">    <span class="p">}</span>
 </span><span class="line">  <span class="p">}</span>
 </span><span class="line"><span class="p">}</span>
-</span><span class="line">
-</span></code>&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;&lt;/figure&gt;&lt;/notextile&gt;&lt;/div&gt;</p>
-
-<pre><code>In this case we can find that cardinality of key paths are very high. Thus,
-we would be unable to collect suitable statistics for each key path.
-However, we could consider such situation as user mistake. Then we should
-advise users to restructure their documents.
-
-There are still kind of documents, which don't fit this model not because of
-user mistake but because of their nature. Imagine json formatted query plans
-stored in the table. Plans could have unlimited levels of nesting and
-correspondingly cardinality of key paths could be very high.
-</code></pre>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <ul>
   <li>
