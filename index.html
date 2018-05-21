@@ -120,6 +120,115 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-05-21T20:35:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon 21 May 2018,  8:35 PM</time>
+        
+      </p>
+    
+    
+      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2018/05/21/fulltext-search-made-almost-right/" itemprop="url">Full Text Search Made (Almost) Right in PostgreSQL 11</a></h2>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Long story short, using PostgreSQL 11 and <a href="https://github.com/postgrespro/rum">RUM index</a>
+you can do both TOP-N query and COUNT(*) query for non-selective FTS queries without
+fetching all the matching results from heap (and that is certainly much faster).
+If you’re interested in details, then please read the detailed description below.</p>
+
+<p>At November 1st 2017, Tome Lane committed a <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=7c70996e">patch</a>
+enabling bitmap scans to behave like index-only scan when possible.
+In particular, since PostgreSQL 11 COUNT(*) queries can be evaluated using
+bitmap scans without accessing heap, when corresponding bit in visibility map
+is set.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+</pre></td><td class="code"><pre><code class="text"><span class="line">commit 7c70996ebf0949b142a99c9445061c3c83ce62b3
+</span><span class="line">Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+</span><span class="line">Date:   Wed Nov 1 17:38:12 2017 -0400
+</span><span class="line">
+</span><span class="line">    Allow bitmap scans to operate as index-only scans when possible.
+</span><span class="line">
+</span><span class="line">    If we don&#39;t have to return any columns from heap tuples, and there&#39;s
+</span><span class="line">    no need to recheck qual conditions, and the heap page is all-visible,
+</span><span class="line">    then we can skip fetching the heap page altogether.
+</span><span class="line">
+</span><span class="line">    Skip prefetching pages too, when possible, on the assumption that the
+</span><span class="line">    recheck flag will remain the same from one page to the next.  While that
+</span><span class="line">    assumption is hardly bulletproof, it seems like a good bet most of the
+</span><span class="line">    time, and better than prefetching pages we don&#39;t need.
+</span><span class="line">
+</span><span class="line">    This commit installs the executor infrastructure, but doesn&#39;t change
+</span><span class="line">    any planner cost estimates, thus possibly causing bitmap scans to
+</span><span class="line">    not be chosen in cases where this change renders them the best choice.
+</span><span class="line">    I (tgl) am not entirely convinced that we need to account for this
+</span><span class="line">    behavior in the planner, because I think typically the bitmap scan would
+</span><span class="line">    get chosen anyway if it&#39;s the best bet.  In any case the submitted patch
+</span><span class="line">    took way too many shortcuts, resulting in too many clearly-bad choices,
+</span><span class="line">    to be committable.
+</span><span class="line">
+</span><span class="line">    Alexander Kuzmenkov, reviewed by Alexey Chernyshov, and whacked around
+</span><span class="line">    rather heavily by me.
+</span><span class="line">
+</span><span class="line">    Discussion: https://postgr.es/m/239a8955-c0fc-f506-026d-c837e86c827b@postgrespro.ru
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+</div>
+  
+  
+    <footer>
+      <a class="read-more btn btn-default" href="/blog/2018/05/21/fulltext-search-made-almost-right/">Read on &rarr;</a>
+    </footer>
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-05-31T18:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Wed 31 May 2017,  6:20 PM</time>
         
       </p>
@@ -600,116 +709,6 @@ enables you to gather statistics for graphs like the one below.</p>
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-uppercase">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-18T12:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri 18 Mar 2016, 12:20 PM</time>
-        
-      </p>
-    
-    
-      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/" itemprop="url">Pg_pathman UPDATE and DELETE Support and Benchmark</a></h2>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Recently <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> receives
-support of UPDATE and DELETE queries.  Because of some specialties of PostgreSQL
-query planner hooks, UPDATE and DELETE planning is accelerated only when only
-one partition is touched by query.  Other way, regular slow inheritance query 
-planning is used.  However, case when UPDATE and DELETE touches only one
-partition seems to be most common and most needing optimization.</p>
-
-<p>Also, I’d like to share some benchmark. This benchmark consists of operations
-on journal table with about 1 M records for year partitioned by day.  For sure,
-this is kind of toy example, because nobody will split so small amount of data
-into so many partitions.  But it is still good to see partitioning overhead.
-Performance of following operations was compared:</p>
-
-<ul>
-  <li>Select single row by its timestamp,</li>
-  <li>Select data for whole day (whole one partition),</li>
-  <li>Insert one row with random timestamp,</li>
-  <li>Update one row with random timestamp.</li>
-</ul>
-
-<p>The following partitioning methods were compared:</p>
-
-<ul>
-  <li>Single table, no partitioning,</li>
-  <li>pg_partman extension,</li>
-  <li>pg_pathman extension.</li>
-</ul>
-
-<p>Benchmarks were done on 2 x Intel Xeon CPU X5675 @ 3.07GHz, 24 GB of memory
-server with fsync = off in 10 threads. See the results below.</p>
-
-<p><img class="no-border" src="/images/pg_pathman_benchmarks.png" width="676" height="445" /></p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Test name</th>
-      <th style="text-align: right">single table, TPS</th>
-      <th style="text-align: right">pg_partman, TPS</th>
-      <th style="text-align: right">pg_pathman, TPS</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Select one row</td>
-      <td style="text-align: right">47973</td>
-      <td style="text-align: right">1084</td>
-      <td style="text-align: right">41775</td>
-    </tr>
-    <tr>
-      <td>Select whole one partition</td>
-      <td style="text-align: right">2302</td>
-      <td style="text-align: right">704</td>
-      <td style="text-align: right">2556</td>
-    </tr>
-    <tr>
-      <td>Insert one row</td>
-      <td style="text-align: right">34401</td>
-      <td style="text-align: right">7969</td>
-      <td style="text-align: right">25859</td>
-    </tr>
-    <tr>
-      <td>Update one row</td>
-      <td style="text-align: right">32769</td>
-      <td style="text-align: right">202</td>
-      <td style="text-align: right">29289</td>
-    </tr>
-  </tbody>
-</table>
-
-</div>
-  
-  
-    <footer>
-      <a class="read-more btn btn-default" href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/">Read on &rarr;</a>
-    </footer>
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -733,6 +732,8 @@ server with fsync = off in 10 threads. See the results below.</p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/2018/05/21/fulltext-search-made-almost-right/">Full Text Search Made (Almost) Right in PostgreSQL 11</a>
+    
     <a class="list-group-item " href="/blog/2017/05/31/alter-index-weird/">ALTER INDEX ... SET STATISTICS ...???</a>
     
     <a class="list-group-item " href="/blog/2017/04/08/uber-answer/">"Our Answer to Uber" Talk at United Dev Conf, Minsk</a>
@@ -740,8 +741,6 @@ server with fsync = off in 10 threads. See the results below.</p>
     <a class="list-group-item " href="/blog/2016/09/29/release-9-6/">PostgreSQL 9.6 Release Is Approaching. Postgres Pro Has Contributed to It.</a>
     
     <a class="list-group-item " href="/blog/2016/06/17/faceted-search/">Faceted Search in the Single PostgreSQL Query</a>
-    
-    <a class="list-group-item " href="/blog/2016/06/15/pg_pathman-runtime-append/">RuntimeAppend in Pg_pathman: Achievements and New Challenges</a>
     
   </div>
 </section>
@@ -761,7 +760,7 @@ server with fsync = off in 10 threads. See the results below.</p>
     </div>
     <footer role="contentinfo"><div class="container">
     <p class="text-muted credits">
-  Copyright &copy; 2017 - Alexander Korotkov<br>
+  Copyright &copy; 2018 - Alexander Korotkov<br>
   <small>
       <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
       <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
