@@ -4,7 +4,7 @@
   <title><![CDATA[Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2018-05-21T20:42:15+03:00</updated>
+  <updated>2018-05-22T01:58:01+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -23,7 +23,7 @@ you can do both TOP-N query and COUNT(*) query for non-selective FTS queries wit
 fetching all the matching results from heap (and that is certainly much faster).
 If you’re interested in details, then please read the detailed description below.</p>
 
-<p>At November 1st 2017, Tome Lane committed a <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=7c70996e">patch</a>
+<p>At November 1st 2017, Tom Lane committed a <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=7c70996e">patch</a>
 enabling bitmap scans to behave like index-only scan when possible.
 In particular, since PostgreSQL 11 COUNT(*) queries can be evaluated using
 bitmap scans without accessing heap, when corresponding bit in visibility map
