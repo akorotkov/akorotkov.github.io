@@ -62,9 +62,6 @@
                     <a href="/blog/archives">Archives</a>
                 </li>
                 <li>
-                    <a href="http://postgrespro.com">Postgres Professional company</a>
-                </li>
-                <li>
                     <a href="/about">About me</a>
                 </li>
             </ul>
@@ -120,90 +117,34 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-05-21T20:35:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon 21 May 2018,  8:35 PM</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-02-17T18:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Sat 17 Feb 2018,  6:20 PM</time>
         
       </p>
     
     
-      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2018/05/21/fulltext-search-made-almost-right/" itemprop="url">Full Text Search Made (Almost) Right in PostgreSQL 11</a></h2>
+      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2018/02/17/fulltext-search-made-almost-right/" itemprop="url">Full Text Search Done (Almost) Right in PostgreSQL 11</a></h2>
     
   </header>
 
 
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Long story short, using PostgreSQL 11 and <a href="https://github.com/postgrespro/rum">RUM index</a>
-you can do both TOP-N query and COUNT(*) query for non-selective FTS queries without
-fetching all the matching results from heap (and that is certainly much faster).
-If you’re interested in details, then please read the detailed description below.</p>
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Long story short, using PostgreSQL 11 with <a href="https://github.com/postgrespro/rum">RUM index</a>
+you can do both TOP-N query and COUNT(*) for non-selective FTS queries without
+fetching all the results from heap (that means much faster).  Are you bored yet?
+If not, please read the detailed description below.</p>
 
-<p>At November 1st 2017, Tom Lane committed a <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=7c70996e">patch</a>
+<p>At November 1st 2017, Tome Lane committed a <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=7c70996e">patch</a>
 enabling bitmap scans to behave like index-only scan when possible.
 In particular, since PostgreSQL 11 COUNT(*) queries can be evaluated using
-bitmap scans without accessing heap, when corresponding bit in visibility map
-is set.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-</pre></td><td class="code"><pre><code class="text"><span class="line">commit 7c70996ebf0949b142a99c9445061c3c83ce62b3
-</span><span class="line">Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
-</span><span class="line">Date:   Wed Nov 1 17:38:12 2017 -0400
-</span><span class="line">
-</span><span class="line">    Allow bitmap scans to operate as index-only scans when possible.
-</span><span class="line">
-</span><span class="line">    If we don&#39;t have to return any columns from heap tuples, and there&#39;s
-</span><span class="line">    no need to recheck qual conditions, and the heap page is all-visible,
-</span><span class="line">    then we can skip fetching the heap page altogether.
-</span><span class="line">
-</span><span class="line">    Skip prefetching pages too, when possible, on the assumption that the
-</span><span class="line">    recheck flag will remain the same from one page to the next.  While that
-</span><span class="line">    assumption is hardly bulletproof, it seems like a good bet most of the
-</span><span class="line">    time, and better than prefetching pages we don&#39;t need.
-</span><span class="line">
-</span><span class="line">    This commit installs the executor infrastructure, but doesn&#39;t change
-</span><span class="line">    any planner cost estimates, thus possibly causing bitmap scans to
-</span><span class="line">    not be chosen in cases where this change renders them the best choice.
-</span><span class="line">    I (tgl) am not entirely convinced that we need to account for this
-</span><span class="line">    behavior in the planner, because I think typically the bitmap scan would
-</span><span class="line">    get chosen anyway if it&#39;s the best bet.  In any case the submitted patch
-</span><span class="line">    took way too many shortcuts, resulting in too many clearly-bad choices,
-</span><span class="line">    to be committable.
-</span><span class="line">
-</span><span class="line">    Alexander Kuzmenkov, reviewed by Alexey Chernyshov, and whacked around
-</span><span class="line">    rather heavily by me.
-</span><span class="line">
-</span><span class="line">    Discussion: https://postgr.es/m/239a8955-c0fc-f506-026d-c837e86c827b@postgrespro.ru
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+bitmap scans without accessing heap when corresponding bit in visibility map
+is set.  This patch was written by Alexander Kuzmenkov and reviewed by
+Alexey Chernyshov (sboth are my Postgres Pro colleagues), and it was heavily
+revised by Tom Lane.</p>
 
 </div>
   
   
     <footer>
-      <a class="read-more btn btn-default" href="/blog/2018/05/21/fulltext-search-made-almost-right/">Read on &rarr;</a>
+      <a class="read-more btn btn-default" href="/blog/2018/02/17/fulltext-search-made-almost-right/">Read on &rarr;</a>
     </footer>
   
 
@@ -732,7 +673,7 @@ enables you to gather statistics for graphs like the one below.</p>
   
   <div id="recent_posts" class="list-group">
     
-    <a class="list-group-item " href="/blog/2018/05/21/fulltext-search-made-almost-right/">Full Text Search Made (Almost) Right in PostgreSQL 11</a>
+    <a class="list-group-item " href="/blog/2018/02/17/fulltext-search-made-almost-right/">Full Text Search Done (Almost) Right in PostgreSQL 11</a>
     
     <a class="list-group-item " href="/blog/2017/05/31/alter-index-weird/">ALTER INDEX ... SET STATISTICS ...???</a>
     
@@ -760,7 +701,7 @@ enables you to gather statistics for graphs like the one below.</p>
     </div>
     <footer role="contentinfo"><div class="container">
     <p class="text-muted credits">
-  Copyright &copy; 2018 - Alexander Korotkov<br>
+  Copyright &copy; 2020 - Alexander Korotkov<br>
   <small>
       <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
       <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.

@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Full Text Search Made (Almost) Right in PostgreSQL 11 - Alexander Korotkov's blog</title>
+  <title>Full Text Search Done (Almost) Right in PostgreSQL 11 - Alexander Korotkov's blog</title>
   <meta name="author" content="Alexander Korotkov">
 
   
@@ -14,15 +14,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://akorotkov.github.io/blog/2018/05/21/fulltext-search-made-almost-right/">
+  <link rel="canonical" href="http://akorotkov.github.io/blog/2018/02/17/fulltext-search-made-almost-right/">
   <link href="/favicon.png" type="image/png" rel="icon">
   <link href="/atom.xml" rel="alternate" title="Alexander Korotkov's blog" type="application/atom+xml">
 
   <!-- http://opengraphprotocol.org/ -->
   <meta name="twitter:card" content="summary_large_image">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="http://akorotkov.github.io/blog/2018/05/21/fulltext-search-made-almost-right/">
-  <meta property="og:title" content="Full Text Search Made (Almost) Right in PostgreSQL 11 - Alexander Korotkov's blog">
+  <meta property="og:url" content="http://akorotkov.github.io/blog/2018/02/17/fulltext-search-made-almost-right/">
+  <meta property="og:title" content="Full Text Search Done (Almost) Right in PostgreSQL 11 - Alexander Korotkov's blog">
   
 
   <script src="/javascripts/libs/jquery/jquery-2.1.3.min.js"></script>
@@ -60,9 +60,6 @@
                 </li>
                 <li >
                     <a href="/blog/archives">Archives</a>
-                </li>
-                <li>
-                    <a href="http://postgrespro.com">Postgres Professional company</a>
                 </li>
                 <li>
                     <a href="/about">About me</a>
@@ -116,101 +113,44 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-05-21T20:35:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon 21 May 2018,  8:35 PM</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-02-17T18:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Sat 17 Feb 2018,  6:20 PM</time>
         
       </p>
     
     
     <h1 class="entry-title" itemprop="name headline">
-        Full Text Search Made (Almost) Right in PostgreSQL 11
+        Full Text Search Done (Almost) Right in PostgreSQL 11
         
     </h1>
     
   </header>
 
 
-<div class="entry-content clearfix" itemprop="articleBody description"><p>Long story short, using PostgreSQL 11 and <a href="https://github.com/postgrespro/rum">RUM index</a>
-you can do both TOP-N query and COUNT(*) query for non-selective FTS queries without
-fetching all the matching results from heap (and that is certainly much faster).
-If you’re interested in details, then please read the detailed description below.</p>
+<div class="entry-content clearfix" itemprop="articleBody description"><p>Long story short, using PostgreSQL 11 with <a href="https://github.com/postgrespro/rum">RUM index</a>
+you can do both TOP-N query and COUNT(*) for non-selective FTS queries without
+fetching all the results from heap (that means much faster).  Are you bored yet?
+If not, please read the detailed description below.</p>
 
-<p>At November 1st 2017, Tom Lane committed a <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=7c70996e">patch</a>
+<p>At November 1st 2017, Tome Lane committed a <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=7c70996e">patch</a>
 enabling bitmap scans to behave like index-only scan when possible.
 In particular, since PostgreSQL 11 COUNT(*) queries can be evaluated using
-bitmap scans without accessing heap, when corresponding bit in visibility map
-is set.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-</pre></td><td class="code"><pre><code class="text"><span class="line">commit 7c70996ebf0949b142a99c9445061c3c83ce62b3
-</span><span class="line">Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
-</span><span class="line">Date:   Wed Nov 1 17:38:12 2017 -0400
-</span><span class="line">
-</span><span class="line">    Allow bitmap scans to operate as index-only scans when possible.
-</span><span class="line">
-</span><span class="line">    If we don&#39;t have to return any columns from heap tuples, and there&#39;s
-</span><span class="line">    no need to recheck qual conditions, and the heap page is all-visible,
-</span><span class="line">    then we can skip fetching the heap page altogether.
-</span><span class="line">
-</span><span class="line">    Skip prefetching pages too, when possible, on the assumption that the
-</span><span class="line">    recheck flag will remain the same from one page to the next.  While that
-</span><span class="line">    assumption is hardly bulletproof, it seems like a good bet most of the
-</span><span class="line">    time, and better than prefetching pages we don&#39;t need.
-</span><span class="line">
-</span><span class="line">    This commit installs the executor infrastructure, but doesn&#39;t change
-</span><span class="line">    any planner cost estimates, thus possibly causing bitmap scans to
-</span><span class="line">    not be chosen in cases where this change renders them the best choice.
-</span><span class="line">    I (tgl) am not entirely convinced that we need to account for this
-</span><span class="line">    behavior in the planner, because I think typically the bitmap scan would
-</span><span class="line">    get chosen anyway if it&#39;s the best bet.  In any case the submitted patch
-</span><span class="line">    took way too many shortcuts, resulting in too many clearly-bad choices,
-</span><span class="line">    to be committable.
-</span><span class="line">
-</span><span class="line">    Alexander Kuzmenkov, reviewed by Alexey Chernyshov, and whacked around
-</span><span class="line">    rather heavily by me.
-</span><span class="line">
-</span><span class="line">    Discussion: https://postgr.es/m/239a8955-c0fc-f506-026d-c837e86c827b@postgrespro.ru
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+bitmap scans without accessing heap when corresponding bit in visibility map
+is set.  This patch was written by Alexander Kuzmenkov and reviewed by
+Alexey Chernyshov (sboth are my Postgres Pro colleagues), and it was heavily
+revised by Tom Lane.</p>
 
 <!--more-->
 
 <p>This commit might seem to be just one of planner and executor optimizations,
 nice but doesn’t deserve much attention.  However, under detailed consideration
-this patch appears to be significant improvement on the way of making fulltext
-search in PostgreSQL to be done in the right way.</p>
+this patch appears to be significant improvement on the way of making full text
+search in PostgreSQL to be done the right way.</p>
 
 <p>I’ve started working on FTS improvements in 2012.  That time I realized that GIN
-index is good for selective FTS queries, when the number of matching results is
-low.  See an example below: GIN did the great work by returning just few
-dozens of matching rows very fast.  The rest of operations including rank
-calculation and sorting are also fast, because they are made over very small
-row set.</p>
+index is good for selective FTS queries, when number of matching results is low.
+See the example below: GIN did great work for us by returning just few dozens of
+matching rows very fast.  The rest operations including relevance calculation
+and sorting are also fast, because they are performed over very small row set.</p>
 
 <div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -260,11 +200,10 @@ row set.</p>
 </span><span class="line"><span class="p">(</span><span class="mi">15</span> <span class="k">rows</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<p>But the situation is different when FTS query is not selective, and number of
-matching rows is high.  Then we have fetch all the matching rows from the heap,
-rank them, and then sort.  And despite we only need TOP-10 of matching rows,
-this query takes a lot of time.  See the example below: “Tom Lane” is for sure
-non-selective query over PostgreSQL mailing lists.</p>
+<p>But situation is different if FTS query is not selective and number of matching
+rows is high.  Then we have fetch all those rows from heap, calculate relevance
+for each of them and sort them.  And despite we only need TOP-10 rows, this
+query takes a lot of time.</p>
 
 <div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -316,27 +255,27 @@ non-selective query over PostgreSQL mailing lists.</p>
 </span><span class="line"><span class="p">(</span><span class="mi">16</span> <span class="k">rows</span><span class="p">)(</span><span class="mi">15</span> <span class="k">rows</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<p>How this situation can be improved?  If we would get results from index already
-pre-ordered by rank, then we would be able to evaluate TOP-N query
+<p>How can we improve this situation?  If we would get results from index
+pre-ordered by relevance, then we would be able to evaluate TOP-N query
 without fetching the whole set of matching rows from heap.  Unfortunately,
-that appears to be impossible for GIN index, which doesn’t contain enough of
-information to calculate the rank.  However, once we have additional information
-about terms positions in the index, it might work.  That would be enough for
-raking fulltext results inside the index.</p>
+that appears to be impossible for GIN index which stores only facts of occurence
+of specifix terms in document.  But if we have additional infromation
+about terms positions in the index, then it might work.  That information
+would be enough to calculate relevance only basing on index information.</p>
 
 <p><img class="no-border center 2x" src="/images/gin2rum.png" width="614" height="134" /></p>
 
-<p>Thus, I’ve <a href="https://www.postgresql.org/message-id/CAPpHfdtSt47PpRQBK6OawHePLJk8PF-wNhswaUpre7_%2Bcc_kmA%40mail.gmail.com">a set of patches</a>
-to the GIN index.  Some of improvements were committed to 9.4, including
+<p>Thus, I’ve proposed <a href="https://www.postgresql.org/message-id/CAPpHfdtSt47PpRQBK6OawHePLJk8PF-wNhswaUpre7_%2Bcc_kmA%40mail.gmail.com">proposed</a>
+a set of patches to GIN index.  Some improvements were committed including
 <a href="http://www.sai.msu.su/~megera/postgres/talks/329_PGCon2014-GIN.pdf">index compression and index search optimization</a>.  However, additional information storage for GIN
-index wasn’t committed, because it changes GIN index structure too much.</p>
+index wasn’t committed, because it alters GIN index structure too much.</p>
 
 <p>Fortunately, we have
 <a href="blog/2016/04/06/extensible-access-methods/">extensible index access methods</a>
-since PostgreSQL 9.6.  And that enables us to implement things, which wasn’t
-accepted to GIN and even more, as a separate index access method
+in PostgreSQL 9.6.  And that enables us to implement things, which wasn’t
+committed to GIN and more, as a separate index access method
 <a href="https://github.com/postgrespro/rum">RUM</a>.  Using RUM, one can execute TOP-N
-FTS query much faster without fetching all the matching rows from the heap.</p>
+FTS query much faster without fetching all the matching rows from heap.</p>
 
 <div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -372,10 +311,10 @@ FTS query much faster without fetching all the matching rows from the heap.</p>
 </span><span class="line"><span class="p">(</span><span class="mi">8</span> <span class="k">rows</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<p>However, the problem persists if you need to get the total count of matching
-rows.  Then PostgreSQL executor still have to fetch all the matching rows from
-the heap in order to check their visibility.  So, if you need to get a total
-number of matching rows for pagination, then it might be still very slow.</p>
+<p>However, the problem persisted if you need to get total count of matching rows.
+Then PostgreSQL executor still have to fetch all the matching rows from the
+heap in order to check their visibility.  So, if you need total number of
+resulting rows for pagination, then it’s still might be very slow.</p>
 
 <div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -415,18 +354,11 @@ number of matching rows for pagination, then it might be still very slow.</p>
 </span><span class="line"><span class="p">(</span><span class="mi">12</span> <span class="k">rows</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<p>For sure, there are some modern UI’s techniques, which doesn’t require to
-show full number of results to user (continuous scrolling, for instance).
-Alternatively, one can use a planner estimation instead of true number of
-matching rows.  But nevertheless, slow counting of total results number was
-still a problem for many of RUM users.</p>
-
-<p>Situation was improved after index-only count was <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=7c70996e">committed</a>.
-Naturally, PostgreSQL maintains visibility map for heap pages.  When
-visibility bit is set for particular heap page, then all the tuples on that page
-are visible; so, visibility check can be skipped.  Using visibility map, index-
-only scan node is working.  But, if index-only scan can skip fetching heap, then
-why can’t count do the same?  Now it can!</p>
+<p>For sure, some modern UIs use techniques like continuous scrolling which doesn’t
+require to show full number of results to user.  Also, one can use planner
+estimation for number of resulting rows which is typically matching the order
+of magnitude to actual number of resulting rows.  But nevertheless, slow counting
+of total results number was a problem for many of RUM users.</p>
 
 <div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -464,12 +396,6 @@ why can’t count do the same?  Now it can!</p>
 </span><span class="line"><span class="p">(</span><span class="mi">11</span> <span class="k">rows</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<p>Therefore, when you run non-selective fulltext query in PostgreSQL 11 with
-RUM, then neither TOP-N query neither COUNT(*) query fetches the whole set of
-matching rows from the heap.  That’s cool, and I would say that fulltext search
-is made almost right in this case.  It’s “almost”, because it would be nice
-to get both TOP-N and COUNT(*) in one SQL query and single index scan.  And that
-is a room for improvement in future versions.</p>
 </div>
 
 
@@ -493,7 +419,7 @@ is a room for improvement in future versions.</p>
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-05-21T20:35:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon 21 May 2018,  8:35 PM</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-02-17T18:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Sat 17 Feb 2018,  6:20 PM</time>
           
 
 <span class="glyphicon glyphicon-tags"></span>&nbsp;
@@ -544,7 +470,7 @@ is a room for improvement in future versions.</p>
   
   <div id="recent_posts" class="list-group">
     
-    <a class="list-group-item active" href="/blog/2018/05/21/fulltext-search-made-almost-right/">Full Text Search Made (Almost) Right in PostgreSQL 11</a>
+    <a class="list-group-item active" href="/blog/2018/02/17/fulltext-search-made-almost-right/">Full Text Search Done (Almost) Right in PostgreSQL 11</a>
     
     <a class="list-group-item " href="/blog/2017/05/31/alter-index-weird/">ALTER INDEX ... SET STATISTICS ...???</a>
     
@@ -572,7 +498,7 @@ is a room for improvement in future versions.</p>
     </div>
     <footer role="contentinfo"><div class="container">
     <p class="text-muted credits">
-  Copyright &copy; 2018 - Alexander Korotkov<br>
+  Copyright &copy; 2020 - Alexander Korotkov<br>
   <small>
       <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
       <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
@@ -588,8 +514,8 @@ is a room for improvement in future versions.</p>
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://akorotkov.github.io/blog/2018/05/21/fulltext-search-made-almost-right/';
-        var disqus_url = 'http://akorotkov.github.io/blog/2018/05/21/fulltext-search-made-almost-right/';
+        var disqus_identifier = 'http://akorotkov.github.io/blog/2018/02/17/fulltext-search-made-almost-right/';
+        var disqus_url = 'http://akorotkov.github.io/blog/2018/02/17/fulltext-search-made-almost-right/';
         var disqus_script = 'embed.js';
       
     (function () {

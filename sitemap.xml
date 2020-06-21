@@ -1,183 +1,180 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>http://akorotkov.github.io/blog/2018/05/21/fulltext-search-made-almost-right/</loc>
-    <lastmod>2018-05-21T20:35:00+03:00</lastmod>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/2017/05/31/alter-index-weird/</loc>
-    <lastmod>2017-05-31T18:20:00+03:00</lastmod>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/2017/04/08/uber-answer/</loc>
-    <lastmod>2017-04-08T00:20:00+03:00</lastmod>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/2016/09/29/release-9-6/</loc>
-    <lastmod>2016-09-29T16:20:00+03:00</lastmod>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/2016/06/17/faceted-search/</loc>
-    <lastmod>2016-06-17T14:20:00+03:00</lastmod>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append/</loc>
-    <lastmod>2016-06-15T15:00:00+03:00</lastmod>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/2016/06/09/psql-graph/</loc>
-    <lastmod>2016-06-09T16:45:00+03:00</lastmod>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps/</loc>
-    <lastmod>2016-05-09T12:50:00+03:00</lastmod>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/</loc>
-    <lastmod>2016-04-06T15:26:00+03:00</lastmod>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6/</loc>
-    <lastmod>2016-03-25T18:00:00+03:00</lastmod>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/</loc>
-    <lastmod>2016-03-18T12:20:00+03:00</lastmod>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/</loc>
-    <lastmod>2016-03-14T11:10:00+03:00</lastmod>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/</loc>
-    <lastmod>2016-03-04T17:10:00+03:00</lastmod>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/2015/09/07/jsonb_statistics/</loc>
-    <lastmod>2015-09-07T11:30:00+03:00</lastmod>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach/</loc>
-    <lastmod>2015-08-26T18:00:00+03:00</lastmod>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/archives/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/about/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/pg/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/psql/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/gdb/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/macosx/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/jsonb/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/stats/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/partitioning/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/pg-pathman/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/condition/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/filter/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/update/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/delete/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/benchmark/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/wait/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/monitoring/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/sampling/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/pg-wait-sampling/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/am/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/extendability/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/bloom/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/scalability/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/buffer-manager/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/graph/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/iterm/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/append/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/runtime/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/faceted-search/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/release/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/9-dot-6/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/uber/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/mysql/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/minsk/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/index/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/weird/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/fts/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/blog/categories/count/</loc>
-  </url>
-  <url>
-    <loc>http://akorotkov.github.io/posts/2/</loc>
-  </url>
+<url>
+<loc>http://akorotkov.github.io/blog/2018/02/17/fulltext-search-made-almost-right/</loc>
+<lastmod>2018-02-17T18:20:00+03:00</lastmod>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/2017/05/31/alter-index-weird/</loc>
+<lastmod>2017-05-31T18:20:00+03:00</lastmod>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/2017/04/08/uber-answer/</loc>
+<lastmod>2017-04-08T00:20:00+03:00</lastmod>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/2016/09/29/release-9-6/</loc>
+<lastmod>2016-09-29T16:20:00+03:00</lastmod>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/2016/06/17/faceted-search/</loc>
+<lastmod>2016-06-17T14:20:00+03:00</lastmod>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append/</loc>
+<lastmod>2016-06-15T15:00:00+03:00</lastmod>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/2016/06/09/psql-graph/</loc>
+<lastmod>2016-06-09T16:45:00+03:00</lastmod>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps/</loc>
+<lastmod>2016-05-09T12:50:00+03:00</lastmod>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/</loc>
+<lastmod>2016-04-06T15:26:00+03:00</lastmod>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6/</loc>
+<lastmod>2016-03-25T18:00:00+03:00</lastmod>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/</loc>
+<lastmod>2016-03-18T12:20:00+03:00</lastmod>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/</loc>
+<lastmod>2016-03-14T11:10:00+03:00</lastmod>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/</loc>
+<lastmod>2016-03-04T17:10:00+03:00</lastmod>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/2015/09/07/jsonb_statistics/</loc>
+<lastmod>2015-09-07T11:30:00+03:00</lastmod>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach/</loc>
+<lastmod>2015-08-26T18:00:00+03:00</lastmod>
+</url>
+<url>
+<loc>http://akorotkov.github.io/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/archives/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/about/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/pg/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/psql/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/gdb/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/macosx/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/jsonb/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/stats/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/partitioning/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/pg-pathman/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/condition/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/filter/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/update/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/delete/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/benchmark/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/wait/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/monitoring/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/sampling/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/pg-wait-sampling/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/am/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/extendability/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/bloom/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/scalability/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/buffer-manager/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/graph/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/iterm/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/append/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/runtime/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/faceted-search/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/release/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/9-dot-6/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/uber/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/mysql/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/minsk/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/index/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/weird/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/fts/</loc>
+</url>
+<url>
+<loc>http://akorotkov.github.io/blog/categories/count/</loc>
+</url>
 </urlset>
