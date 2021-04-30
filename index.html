@@ -117,89 +117,6 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2020-04-30T03:15:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Thu 30 Apr 2020,  3:15 AM</time>
-        
-      </p>
-    
-    
-      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2020/04/30/arm/" itemprop="url">Dramatical Effect of LSE Instructions for PostgreSQL on Graviton2 Instances</a></h2>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>The world changes. ARM architecture breaks into new areas of computing. An only
-decade ago, only your mobile, router, or another specialized device could be
-ARM-based, while your desktop and server were typically x86-based. Nowadays,
-your new MacBook is ARM-based, and your EC2 instance could be ARM as well.</p>
-
-<p>In the mid-2020, Amazon made graviton2 instances publically available. The
-maximum number of CPU core there is 64. This number is where it becomes
-interesting to check PostgreSQL scalability. It’s exciting to check because
-ARM implements atomic operations using pair of load/store. So, in a sense,
-ARM is just like Power, where
-<a href="https://www.postgresql.org/message-id/CAPpHfdsKrh7c7P8-5eG-qW3VQobybbwqH%3DgL5Ck%2BdOES-gBbFg%40mail.gmail.com">I’ve previously seen</a>
-a significant effect of platform-specific atomics optimizations.</p>
-
-<p>But on the other hand, ARM 8.1 defines a set of LSE instructions, which,
-in particular, provide the way to implement atomic operation in a single
-instruction (just like x86). What would be better: special optimization,
-which puts custom logic between load and store instructions, or just a simple
-loop of LSE CAS instructions? I’ve tried them both.</p>
-
-<p>You can see the results of read-only and read-write pgbench on the graphs
-below (details on experiments are <a href="https://www.postgresql.org/message-id/CAPpHfdsGqVd6EJ4mr_RZVE5xSiCNBy4MuSvdTrKmTpM0eyWGpg%40mail.gmail.com">here</a>).
-<code>pg14-devel-lwlock-ldrex-strex</code> is the patched PostgreSQL with special
-load/store optimization for lwlock, <code>pg14-devel-lse</code> is PostgreSQL compiled
-with LSE support enabled.</p>
-
-<p><img class="no-border 2x" src="/images/arm-ro.png" width="720" height="432" /></p>
-
-<p><img class="no-border 2x" src="/images/arm-rw.png" width="720" height="432" /></p>
-
-<p>You can see that load/store optimization gives substantial positive effect, but
-LSE rocks here!</p>
-
-<p>So, if you’re running PostgreSQL on graviton2 instance, make sure you’ve
-binaries compiled with LSE support (see <a href="https://github.com/aws/aws-graviton-getting-started/blob/master/c-c++.md">the instruction</a>)
-because the effect is dramatic.</p>
-
-<p>BTW, it appears that <a href="https://www.postgresql.org/message-id/1367116.1606802480%40sss.pgh.pa.us">none of these optimizations have a noticeable effect on the performance of Apple M1</a>.
-Probably, M1 has a smart enough inner optimizer to recognize these different
-implementations to be equivalent.  And it was surprising that LSE usage might
-give <a href="https://www.postgresql.org/message-id/CAB10pyYgh%2BKM4rY6XYbj3NNHkUQVV9UNpqaVmb9_fLbsUW%2BVyg%40mail.gmail.com">a small negative effect on Kunpeng 920</a>.
-It was discouraging for me to know an ARM processor, where single instruction
-operation is slower than multiple instruction equivalent. Hopefully,
-processor architects would fix this in new Kunpeng processors.</p>
-
-<p>In general, we see that now different ARM embodiments have different
-performance characteristics and different effects of optimizations. Hopefully,
-this is a problem of growth, and it will be overcome soon.</p>
-</div>
-  
-  
-
-
-        </article>
-      
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-uppercase">
-        
-
-
-
-
-
-
-
-
-
-
-
-
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2020-04-30T03:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Thu 30 Apr 2020,  3:10 AM</time>
         
       </p>
@@ -706,6 +623,59 @@ cleaning and testing #1 was finally
 
         </article>
       
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-04-06T15:26:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Wed  6 Apr 2016,  3:26 PM</time>
+        
+      </p>
+    
+    
+      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2016/04/06/extensible-access-methods/" itemprop="url">Extensible Access Methods Are Committed to 9.6</a></h2>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>PostgreSQL 9.6 receives suitable support of extensible index access methods.
+And that’s good news because Postgres was initially designed to support it.</p>
+
+<blockquote>
+  <p>“It is imperative that a user be able to construct new access methods to 
+provide efficient access to instances of nontraditional base types”</p>
+
+  <p>Michael Stonebraker, Jeff Anton, Michael Hirohama.
+Extendability in POSTGRES , IEEE Data Eng. Bull. 10 (2) pp.16-23, 1987</p>
+</blockquote>
+
+<p>That was a huge work which consists of multiple steps.</p>
+
+</div>
+  
+  
+    <footer>
+      <a class="read-more btn btn-default" href="/blog/2016/04/06/extensible-access-methods/">Read on &rarr;</a>
+    </footer>
+  
+
+
+        </article>
+      
     </div>
 
     <ul class="pager">
@@ -731,13 +701,13 @@ cleaning and testing #1 was finally
     
     <a class="list-group-item " href="/blog/2020/04/30/arm/">Dramatical Effect of LSE Instructions for PostgreSQL on Graviton2 Instances</a>
     
-    <a class="list-group-item " href="/blog/2020/04/30/arm/">Dramatical Effect of LSE Instructions for PostgreSQL on Graviton2 Instances</a>
-    
     <a class="list-group-item " href="/blog/2018/02/17/fulltext-search-made-almost-right/">Full Text Search Done (Almost) Right in PostgreSQL 11</a>
     
     <a class="list-group-item " href="/blog/2017/05/31/alter-index-weird/">ALTER INDEX ... SET STATISTICS ...???</a>
     
     <a class="list-group-item " href="/blog/2017/04/08/uber-answer/">"Our Answer to Uber" Talk at United Dev Conf, Minsk</a>
+    
+    <a class="list-group-item " href="/blog/2016/09/29/release-9-6/">PostgreSQL 9.6 Release Is Approaching. Postgres Pro Has Contributed to It.</a>
     
   </div>
 </section>
