@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Arm | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/arm/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-01T14:09:15+03:00</updated>
+  <updated>2021-05-03T14:08:43+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -65,6 +65,12 @@ processor architects would fix this in new Kunpeng processors.</p>
 <p>In general, we see that now different ARM embodiments have different
 performance characteristics and different effects of optimizations. Hopefully,
 this is a problem of growth, and it will be overcome soon.</p>
+
+<p><strong>Update:</strong> As Krunal Bauskar pointer in the comments, LSE instructions are still
+faster than the load/store option on Kunpeng 920. Different timings might cause
+the regression. For instance, with LSE instructions, we could just faster reach
+the regression caused by another bottleneck.</p>
+
 ]]></content>
   </entry>
   

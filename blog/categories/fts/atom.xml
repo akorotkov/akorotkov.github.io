@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Fts | Alexander Korotkov's blog]]></title>
   <link href="http://akorotkov.github.io/blog/categories/fts/atom.xml" rel="self"/>
   <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-01T14:09:15+03:00</updated>
+  <updated>2021-05-03T14:08:43+03:00</updated>
   <id>http://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -12,6 +12,15 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[PostgreSQL 14: Small, but Substantion Change to Fulltext Query Parsing]]></title>
+    <link href="http://akorotkov.github.io/blog/2021/05/08/pg-14-query-parsing/"/>
+    <updated>2021-05-08T03:10:00+03:00</updated>
+    <id>http://akorotkov.github.io/blog/2021/05/08/pg-14-query-parsing</id>
+    <content type="html"><![CDATA[
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Full Text Search Done (Almost) Right in PostgreSQL 11]]></title>
