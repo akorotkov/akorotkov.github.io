@@ -117,43 +117,6 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2021-05-08T03:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Sat  8 May 2021,  3:10 AM</time>
-        
-      </p>
-    
-    
-      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2021/05/08/pg-14-query-parsing/" itemprop="url">PostgreSQL 14: Small, but Substantion Change to Fulltext Query Parsing</a></h2>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description">
-</div>
-  
-  
-
-
-        </article>
-      
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-uppercase">
-        
-
-
-
-
-
-
-
-
-
-
-
-
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2021-04-30T03:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri 30 Apr 2021,  3:10 AM</time>
         
       </p>
@@ -668,6 +631,63 @@ Extendability in POSTGRES , IEEE Data Eng. Bull. 10 (2) pp.16-23, 1987</p>
 
         </article>
       
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-25T18:00:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri 25 Mar 2016,  6:00 PM</time>
+        
+      </p>
+    
+    
+      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2016/03/25/wait_monitoring_9_6/" itemprop="url">Monitoring Wait Events in PostgreSQL 9.6</a></h2>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Recently Robert Haas has <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=53be0b1a">committed</a> a patch which allows
+seeing some more detailed information about current wait event of the process.
+In particular, user will be able to see if process is waiting for heavyweight
+lock, lightweight lock (either individual or tranche) or buffer pin.  The full
+list of wait events is available in the
+<a href="http://www.postgresql.org/docs/devel/static/monitoring-stats.html#WAIT-EVENT-TABLE">documentation</a>.
+Hopefully, it will be more wait events in further releases.</p>
+
+<p>It’s nice to see current wait event of the process, but just one snapshot is
+not very descriptive and definitely not enough to do any conclusion.  But
+we can use sampling for collecting suitable statistics.  This is why I’d like
+to present <a href="https://github.com/postgrespro/pg_wait_sampling">pg_wait_sampling</a>
+which automates gathering sampling statistics of wait events.  pg_wait_sampling
+enables you to gather statistics for graphs like the one below.</p>
+
+<p><img class="no-border" src="/images/wait_monitoring.png" width="629" height="638" /></p>
+
+</div>
+  
+  
+    <footer>
+      <a class="read-more btn btn-default" href="/blog/2016/03/25/wait_monitoring_9_6/">Read on &rarr;</a>
+    </footer>
+  
+
+
+        </article>
+      
     </div>
 
     <ul class="pager">
@@ -691,8 +711,6 @@ Extendability in POSTGRES , IEEE Data Eng. Bull. 10 (2) pp.16-23, 1987</p>
   
   <div id="recent_posts" class="list-group">
     
-    <a class="list-group-item " href="/blog/2021/05/08/pg-14-query-parsing/">PostgreSQL 14: Small, but Substantion Change to Fulltext Query Parsing</a>
-    
     <a class="list-group-item " href="/blog/2021/04/30/arm/">Dramatical Effect of LSE Instructions for PostgreSQL on Graviton2 Instances</a>
     
     <a class="list-group-item " href="/blog/2018/02/17/fulltext-search-made-almost-right/">Full Text Search Done (Almost) Right in PostgreSQL 11</a>
@@ -700,6 +718,8 @@ Extendability in POSTGRES , IEEE Data Eng. Bull. 10 (2) pp.16-23, 1987</p>
     <a class="list-group-item " href="/blog/2017/05/31/alter-index-weird/">ALTER INDEX ... SET STATISTICS ...???</a>
     
     <a class="list-group-item " href="/blog/2017/04/08/uber-answer/">"Our Answer to Uber" Talk at United Dev Conf, Minsk</a>
+    
+    <a class="list-group-item " href="/blog/2016/06/17/faceted-search/">Faceted Search in the Single PostgreSQL Query</a>
     
   </div>
 </section>
