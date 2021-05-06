@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Gdb | Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/blog/categories/gdb/atom.xml" rel="self"/>
-  <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-03T17:46:50+03:00</updated>
-  <id>http://akorotkov.github.io/</id>
+  <link href="https://akorotkov.github.io/blog/categories/gdb/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-06T18:15:32+03:00</updated>
+  <id>https://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Psql Command to Attach Gdb to Backend]]></title>
-    <link href="http://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach/"/>
+    <link href="https://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach/"/>
     <updated>2015-08-26T18:00:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach</id>
+    <id>https://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach</id>
     <content type="html"><![CDATA[<p>While hacking PostgreSQL it’s very useful to know pid of the backend you are
 working with. You need to know pid of the process to attach debugger, profiler
 etc. Luckily, .psqlrc provides us an elegant way to define the shortcuts for

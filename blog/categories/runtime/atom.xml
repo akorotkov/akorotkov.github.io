@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Runtime | Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/blog/categories/runtime/atom.xml" rel="self"/>
-  <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-03T17:46:50+03:00</updated>
-  <id>http://akorotkov.github.io/</id>
+  <link href="https://akorotkov.github.io/blog/categories/runtime/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-06T18:15:32+03:00</updated>
+  <id>https://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[RuntimeAppend in Pg_pathman: Achievements and New Challenges]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append/"/>
+    <link href="https://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append/"/>
     <updated>2016-06-15T15:00:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append</id>
+    <id>https://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append</id>
     <content type="html"><![CDATA[<p>Dealing with partitioned tables we can’t always select relevant partitions
 during query planning.  Naturally, during query planning you can’t know values
 which come from subquery or outer part of nested loop join.  Nevertheless, it

@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Filter | Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/blog/categories/filter/atom.xml" rel="self"/>
-  <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-03T17:46:50+03:00</updated>
-  <id>http://akorotkov.github.io/</id>
+  <link href="https://akorotkov.github.io/blog/categories/filter/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-06T18:15:32+03:00</updated>
+  <id>https://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[How Does Pg_pathman Handle Filter Conditions?]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/"/>
+    <link href="https://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/"/>
     <updated>2016-03-14T11:10:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing</id>
+    <id>https://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing</id>
     <content type="html"><![CDATA[<p><img class="no-border right" src="/images/filter_data_icon.jpg" width="256" height="256"></p>
 
 <p>In my <a href="/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve

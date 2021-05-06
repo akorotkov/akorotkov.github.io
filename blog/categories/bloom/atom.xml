@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Bloom | Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/blog/categories/bloom/atom.xml" rel="self"/>
-  <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-03T17:46:50+03:00</updated>
-  <id>http://akorotkov.github.io/</id>
+  <link href="https://akorotkov.github.io/blog/categories/bloom/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-06T18:15:32+03:00</updated>
+  <id>https://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Extensible Access Methods Are Committed to 9.6]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/"/>
+    <link href="https://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/"/>
     <updated>2016-04-06T15:26:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods</id>
+    <id>https://akorotkov.github.io/blog/2016/04/06/extensible-access-methods</id>
     <content type="html"><![CDATA[<p>PostgreSQL 9.6 receives suitable support of extensible index access methods.
 And that’s good news because Postgres was initially designed to support it.</p>
 

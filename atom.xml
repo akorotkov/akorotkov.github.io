@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/atom.xml" rel="self"/>
-  <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-03T17:46:50+03:00</updated>
-  <id>http://akorotkov.github.io/</id>
+  <link href="https://akorotkov.github.io/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-06T18:15:32+03:00</updated>
+  <id>https://akorotkov.github.io/?utm_medium=social&amp;utm_source=rss</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
     
@@ -14,10 +14,218 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Jsonpath: ** Operator and Lax Mode Are't Meant to Be Together.]]></title>
+    <link href="https://akorotkov.github.io/blog/2021/05/06/jsonpath-double-asterisk-lax/"/>
+    <updated>2021-05-06T18:15:00+03:00</updated>
+    <id>https://akorotkov.github.io/blog/2021/05/06/jsonpath-double-asterisk-lax/?utm_medium=social&amp;utm_source=rss</id>
+    <content type="html"><![CDATA[<p><img class="no-border 2x" src="https://akorotkov.github.io/images/double_asterisk_lax.png" width="529" height="221" /></p>
+
+<p>PostgreSQL has an extension to jsonpath: <code>**</code> operator, which explores
+arbitrary depth finding your values everywhere.  At the same time, there is
+a <code>lax</code> mode, defined by the standard, providing a “relaxed” way for working
+with json.  In the <code>lax</code> mode, accessors automatically unwrap arrays; missing
+keys don’t trigger errors; etc.  In short, it appears that the <code>**</code> operator
+and <code>lax</code> mode aren’t designed to be together :)</p>
+
+<!--more-->
+
+<p>The story started with <a href="https://www.postgresql.org/message-id/16828-2b0229babfad2d8c%40postgresql.org">the bug report</a>.
+The simplified version is below.  Jsonpath query is intended to select the
+value of key <code>"y"</code> everywhere.  But it appears to select these values twice.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">jsonb_path_query</span><span class="p">(</span><span class="s1">&#39;[{&quot;x&quot;: &quot;a&quot;, &quot;y&quot;: [{&quot;x&quot;:&quot;b&quot;}]}]&#39;</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
+</span><span class="line">                                 <span class="s1">&#39;$.**.x&#39;</span><span class="p">);</span>
+</span><span class="line"> <span class="n">jsonb_path_query</span>
+</span><span class="line"><span class="c1">------------------</span>
+</span><span class="line"> <span class="ss">&quot;a&quot;</span>
+</span><span class="line"> <span class="ss">&quot;a&quot;</span>
+</span><span class="line"> <span class="ss">&quot;b&quot;</span>
+</span><span class="line"> <span class="ss">&quot;b&quot;</span>
+</span><span class="line"><span class="p">(</span><span class="mi">4</span> <span class="k">rows</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>This case looks like a bug. But is it? Let’s dig into details. Let’s split
+the jsonpath query into two parts: one containing the <code>**</code> operator and another
+having the key accessor.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">SELECT</span> <span class="n">var</span><span class="p">,</span>
+</span><span class="line">         <span class="n">jsonb_path_query_array</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="s1">&#39;$.x&#39;</span><span class="p">)</span> <span class="n">key_x</span>
+</span><span class="line">  <span class="k">FROM</span> <span class="n">jsonb_path_query</span><span class="p">(</span><span class="s1">&#39;[{&quot;x&quot;: &quot;a&quot;, &quot;y&quot;: [{&quot;x&quot;:&quot;b&quot;}]}]&#39;</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
+</span><span class="line">                        <span class="s1">&#39;$.**&#39;</span><span class="p">)</span> <span class="n">var</span><span class="p">;</span>
+</span><span class="line">               <span class="n">var</span>               <span class="o">|</span> <span class="n">key_x</span>
+</span><span class="line"><span class="c1">---------------------------------+-------</span>
+</span><span class="line"> <span class="p">[</span><span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;a&quot;</span><span class="p">,</span> <span class="ss">&quot;y&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;b&quot;</span><span class="err">}</span><span class="p">]</span><span class="err">}</span><span class="p">]</span> <span class="o">|</span> <span class="p">[</span><span class="ss">&quot;a&quot;</span><span class="p">]</span>
+</span><span class="line"> <span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;a&quot;</span><span class="p">,</span> <span class="ss">&quot;y&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;b&quot;</span><span class="err">}</span><span class="p">]</span><span class="err">}</span>   <span class="o">|</span> <span class="p">[</span><span class="ss">&quot;a&quot;</span><span class="p">]</span>
+</span><span class="line"> <span class="ss">&quot;a&quot;</span>                             <span class="o">|</span> <span class="p">[]</span>
+</span><span class="line"> <span class="p">[</span><span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;b&quot;</span><span class="err">}</span><span class="p">]</span>                    <span class="o">|</span> <span class="p">[</span><span class="ss">&quot;b&quot;</span><span class="p">]</span>
+</span><span class="line"> <span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;b&quot;</span><span class="err">}</span>                      <span class="o">|</span> <span class="p">[</span><span class="ss">&quot;b&quot;</span><span class="p">]</span>
+</span><span class="line"> <span class="ss">&quot;b&quot;</span>                             <span class="o">|</span> <span class="p">[]</span>
+</span><span class="line"><span class="p">(</span><span class="mi">6</span> <span class="k">rows</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>As you can see, the <code>**</code> operator selects every child in the json document as
+expected. The key accessor extracts corresponding values from both objects
+themselves and their wrapping arrays. And that’s also expected in the <code>lax</code>
+mode. So, it appears there is no bug; everything works as designed, although
+it’s surprising for users.</p>
+
+<p>Finally, I’ve <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=b41645460a">committed a paragraph</a> to the
+<a href="https://www.postgresql.org/docs/devel/functions-json.html#STRICT-AND-LAX-MODES">docs</a>,
+which explicitly clarifies this issue.
+It seems that <code>lax</code> mode and <code>**</code> operator just aren’t designed to be
+used together.  If you need <code>**</code> operator, you can use <code>strict</code> mode. and
+everything is intuitively correct.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">jsonb_path_query</span><span class="p">(</span><span class="s1">&#39;[{&quot;x&quot;: &quot;a&quot;, &quot;y&quot;: [{&quot;x&quot;:&quot;b&quot;}]}]&#39;</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
+</span><span class="line">                                 <span class="s1">&#39;strict $.**.x&#39;</span><span class="p">);</span>
+</span><span class="line"> <span class="n">jsonb_path_query</span>
+</span><span class="line"><span class="c1">------------------</span>
+</span><span class="line"> <span class="ss">&quot;a&quot;</span>
+</span><span class="line"> <span class="ss">&quot;b&quot;</span>
+</span><span class="line"><span class="p">(</span><span class="mi">2</span> <span class="k">rows</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Jsonpath: ** Operator and Lax Mode Are't Meant to Be Together.]]></title>
+    <link href="https://akorotkov.github.io/blog/2021/05/06/jsonpath-double-asterisk-lax/"/>
+    <updated>2021-05-06T18:10:00+03:00</updated>
+    <id>https://akorotkov.github.io/blog/2021/05/06/jsonpath-double-asterisk-lax/?utm_medium=social&amp;utm_source=rss</id>
+    <content type="html"><![CDATA[<p><img class="no-border 2x" src="https://akorotkov.github.io/images/double_asterisk_lax.png" width="529" height="221" /></p>
+
+<p>PostgreSQL has an extension to jsonpath: <code>**</code> operator, which explores
+arbitrary depth finding your values everywhere.  At the same time, there is
+a <code>lax</code> mode, defined by the standard, providing a “relaxed” way for working
+with json.  In the <code>lax</code> mode, accessors automatically unwrap arrays; missing
+keys don’t trigger errors; etc.  In short, it appears that the <code>**</code> operator
+and <code>lax</code> mode aren’t designed to be together :)</p>
+
+<!--more-->
+
+<p>The story started with <a href="https://www.postgresql.org/message-id/16828-2b0229babfad2d8c%40postgresql.org">the bug report</a>.
+The simplified version is below.  Jsonpath query is intended to select the
+value of key <code>"y"</code> everywhere.  But it appears to select these values twice.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">jsonb_path_query</span><span class="p">(</span><span class="s1">&#39;[{&quot;x&quot;: &quot;a&quot;, &quot;y&quot;: [{&quot;x&quot;:&quot;b&quot;}]}]&#39;</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
+</span><span class="line">                                 <span class="s1">&#39;$.**.x&#39;</span><span class="p">);</span>
+</span><span class="line"> <span class="n">jsonb_path_query</span>
+</span><span class="line"><span class="c1">------------------</span>
+</span><span class="line"> <span class="ss">&quot;a&quot;</span>
+</span><span class="line"> <span class="ss">&quot;a&quot;</span>
+</span><span class="line"> <span class="ss">&quot;b&quot;</span>
+</span><span class="line"> <span class="ss">&quot;b&quot;</span>
+</span><span class="line"><span class="p">(</span><span class="mi">4</span> <span class="k">rows</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>This case looks like a bug. But is it? Let’s dig into details. Let’s split
+the jsonpath query into two parts: one containing the <code>**</code> operator and another
+having the key accessor.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">SELECT</span> <span class="n">var</span><span class="p">,</span>
+</span><span class="line">         <span class="n">jsonb_path_query_array</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="s1">&#39;$.x&#39;</span><span class="p">)</span> <span class="n">key_x</span>
+</span><span class="line">  <span class="k">FROM</span> <span class="n">jsonb_path_query</span><span class="p">(</span><span class="s1">&#39;[{&quot;x&quot;: &quot;a&quot;, &quot;y&quot;: [{&quot;x&quot;:&quot;b&quot;}]}]&#39;</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
+</span><span class="line">                        <span class="s1">&#39;$.**&#39;</span><span class="p">)</span> <span class="n">var</span><span class="p">;</span>
+</span><span class="line">               <span class="n">var</span>               <span class="o">|</span> <span class="n">key_x</span>
+</span><span class="line"><span class="c1">---------------------------------+-------</span>
+</span><span class="line"> <span class="p">[</span><span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;a&quot;</span><span class="p">,</span> <span class="ss">&quot;y&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;b&quot;</span><span class="err">}</span><span class="p">]</span><span class="err">}</span><span class="p">]</span> <span class="o">|</span> <span class="p">[</span><span class="ss">&quot;a&quot;</span><span class="p">]</span>
+</span><span class="line"> <span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;a&quot;</span><span class="p">,</span> <span class="ss">&quot;y&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;b&quot;</span><span class="err">}</span><span class="p">]</span><span class="err">}</span>   <span class="o">|</span> <span class="p">[</span><span class="ss">&quot;a&quot;</span><span class="p">]</span>
+</span><span class="line"> <span class="ss">&quot;a&quot;</span>                             <span class="o">|</span> <span class="p">[]</span>
+</span><span class="line"> <span class="p">[</span><span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;b&quot;</span><span class="err">}</span><span class="p">]</span>                    <span class="o">|</span> <span class="p">[</span><span class="ss">&quot;b&quot;</span><span class="p">]</span>
+</span><span class="line"> <span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;b&quot;</span><span class="err">}</span>                      <span class="o">|</span> <span class="p">[</span><span class="ss">&quot;b&quot;</span><span class="p">]</span>
+</span><span class="line"> <span class="ss">&quot;b&quot;</span>                             <span class="o">|</span> <span class="p">[]</span>
+</span><span class="line"><span class="p">(</span><span class="mi">6</span> <span class="k">rows</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>As you can see, the <code>**</code> operator selects every child in the json document as
+expected. The key accessor extracts corresponding values from both objects
+themselves and their wrapping arrays. And that’s also expected in the <code>lax</code>
+mode. So, it appears there is no bug; everything works as designed, although
+it’s surprising for users.</p>
+
+<p>Finally, I’ve <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=b41645460a">committed a paragraph</a> to the
+<a href="https://www.postgresql.org/docs/devel/functions-json.html#STRICT-AND-LAX-MODES">docs</a>,
+which explicitly clarifies this issue.
+It seems that <code>lax</code> mode and <code>**</code> operator just aren’t designed to be
+used together.  If you need <code>**</code> operator, you can use <code>strict</code> mode. and
+everything is intuitively correct.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">jsonb_path_query</span><span class="p">(</span><span class="s1">&#39;[{&quot;x&quot;: &quot;a&quot;, &quot;y&quot;: [{&quot;x&quot;:&quot;b&quot;}]}]&#39;</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
+</span><span class="line">                                 <span class="s1">&#39;strict $.**.x&#39;</span><span class="p">);</span>
+</span><span class="line"> <span class="n">jsonb_path_query</span>
+</span><span class="line"><span class="c1">------------------</span>
+</span><span class="line"> <span class="ss">&quot;a&quot;</span>
+</span><span class="line"> <span class="ss">&quot;b&quot;</span>
+</span><span class="line"><span class="p">(</span><span class="mi">2</span> <span class="k">rows</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Dramatical Effect of LSE Instructions for PostgreSQL on Graviton2 Instances]]></title>
-    <link href="http://akorotkov.github.io/blog/2021/04/30/arm/"/>
+    <link href="https://akorotkov.github.io/blog/2021/04/30/arm/"/>
     <updated>2021-04-30T03:10:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2021/04/30/arm</id>
+    <id>https://akorotkov.github.io/blog/2021/04/30/arm/?utm_medium=social&amp;utm_source=rss</id>
     <content type="html"><![CDATA[<p>The world changes. ARM architecture breaks into new areas of computing. An only
 decade ago, only your mobile, router, or another specialized device could be
 ARM-based, while your desktop and server were typically x86-based. Nowadays,
@@ -43,9 +251,9 @@ below (details on experiments are <a href="https://www.postgresql.org/message-id
 load/store optimization for lwlock, <code>pg14-devel-lse</code> is PostgreSQL compiled
 with LSE support enabled.</p>
 
-<p><img class="no-border 2x" src="http://akorotkov.github.io/images/arm-ro.png" width="720" height="432" /></p>
+<p><img class="no-border 2x" src="https://akorotkov.github.io/images/arm-ro.png" width="720" height="432" /></p>
 
-<p><img class="no-border 2x" src="http://akorotkov.github.io/images/arm-rw.png" width="720" height="432" /></p>
+<p><img class="no-border 2x" src="https://akorotkov.github.io/images/arm-rw.png" width="720" height="432" /></p>
 
 <p>You can see that load/store optimization gives substantial positive effect, but
 LSE rocks here!</p>
@@ -76,9 +284,9 @@ the regression caused by another bottleneck.</p>
   
   <entry>
     <title type="html"><![CDATA[Full Text Search Done (Almost) Right in PostgreSQL 11]]></title>
-    <link href="http://akorotkov.github.io/blog/2018/02/17/fulltext-search-made-almost-right/"/>
+    <link href="https://akorotkov.github.io/blog/2018/02/17/fulltext-search-made-almost-right/"/>
     <updated>2018-02-17T18:20:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2018/02/17/fulltext-search-made-almost-right</id>
+    <id>https://akorotkov.github.io/blog/2018/02/17/fulltext-search-made-almost-right/?utm_medium=social&amp;utm_source=rss</id>
     <content type="html"><![CDATA[<p>Long story short, using PostgreSQL 11 with <a href="https://github.com/postgrespro/rum">RUM index</a>
 you can do both TOP-N query and COUNT(*) for non-selective FTS queries without
 fetching all the results from heap (that means much faster).  Are you bored yet?
@@ -216,7 +424,7 @@ of specifix terms in document.  But if we have additional infromation
 about terms positions in the index, then it might work.  That information
 would be enough to calculate relevance only basing on index information.</p>
 
-<p><img class="no-border center 2x" src="http://akorotkov.github.io/images/gin2rum.png" width="614" height="134" /></p>
+<p><img class="no-border center 2x" src="https://akorotkov.github.io/images/gin2rum.png" width="614" height="134" /></p>
 
 <p>Thus, I’ve proposed <a href="https://www.postgresql.org/message-id/CAPpHfdtSt47PpRQBK6OawHePLJk8PF-wNhswaUpre7_%2Bcc_kmA%40mail.gmail.com">proposed</a>
 a set of patches to GIN index.  Some improvements were committed including
@@ -354,9 +562,9 @@ of total results number was a problem for many of RUM users.</p>
   
   <entry>
     <title type="html"><![CDATA[ALTER INDEX ... SET STATISTICS ...???]]></title>
-    <link href="http://akorotkov.github.io/blog/2017/05/31/alter-index-weird/"/>
+    <link href="https://akorotkov.github.io/blog/2017/05/31/alter-index-weird/"/>
     <updated>2017-05-31T18:20:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2017/05/31/alter-index-weird</id>
+    <id>https://akorotkov.github.io/blog/2017/05/31/alter-index-weird/?utm_medium=social&amp;utm_source=rss</id>
     <content type="html"><![CDATA[<p>It’s not very widely known, but PostgreSQL is gathering statistics for indexed expressions.  See following example.</p>
 
 <div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
@@ -494,9 +702,9 @@ of total results number was a problem for many of RUM users.</p>
   
   <entry>
     <title type="html"><![CDATA["Our Answer to Uber" Talk at United Dev Conf, Minsk]]></title>
-    <link href="http://akorotkov.github.io/blog/2017/04/08/uber-answer/"/>
+    <link href="https://akorotkov.github.io/blog/2017/04/08/uber-answer/"/>
     <updated>2017-04-08T00:20:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2017/04/08/uber-answer</id>
+    <id>https://akorotkov.github.io/blog/2017/04/08/uber-answer/?utm_medium=social&amp;utm_source=rss</id>
     <content type="html"><![CDATA[<p>Today I gave a talk “Our answer to Uber” at United Dev Conf, Minsk.  Slides could be found at <a href="https://www.slideshare.net/AlexanderKorotkov/our-answer-to-uber/">slideshare</a>.  In my talk I attempted to make a review of <a href="https://eng.uber.com/mysql-migration/">Uber’s notes</a> and summarize community efforts to overcome highlighted shortcomings.</p>
 
 <p>United Dev Conf is quite big IT conference with more than 700 attendees.  I’d like to notice that interest in PostgreSQL is quire high.  The room was almost full during my talk.  Also, after the talk I was continuously giving answers to surroundings in about 1 hour.</p>
@@ -508,9 +716,9 @@ of total results number was a problem for many of RUM users.</p>
   
   <entry>
     <title type="html"><![CDATA[Faceted Search in the Single PostgreSQL Query]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/06/17/faceted-search/"/>
+    <link href="https://akorotkov.github.io/blog/2016/06/17/faceted-search/"/>
     <updated>2016-06-17T14:20:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/06/17/faceted-search</id>
+    <id>https://akorotkov.github.io/blog/2016/06/17/faceted-search/?utm_medium=social&amp;utm_source=rss</id>
     <content type="html"><![CDATA[<p>Faceted search is very popular buzzword nowadays.  In short, faceted search
 specialty is that its results are organized per category.  Popular search
 engines are receiving special support of faceted search.</p>
@@ -717,9 +925,9 @@ fulltext search, JSON support, window functions etc.</p>
   
   <entry>
     <title type="html"><![CDATA[RuntimeAppend in Pg_pathman: Achievements and New Challenges]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append/"/>
+    <link href="https://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append/"/>
     <updated>2016-06-15T15:00:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append</id>
+    <id>https://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append/?utm_medium=social&amp;utm_source=rss</id>
     <content type="html"><![CDATA[<p>Dealing with partitioned tables we can’t always select relevant partitions
 during query planning.  Naturally, during query planning you can’t know values
 which come from subquery or outer part of nested loop join.  Nevertheless, it
@@ -874,7 +1082,7 @@ for prepared statements or long OLAP queries.</p>
 benchmark when RuntimeAppend node returns just a few rows in prepared statement.
 Despite high planning time doesn’t affect prepared statements, TPS was few
 time slower than it was without partitioning.  After running perf, we got this
-<a href="http://akorotkov.github.io/images/runtimeappend_flamegraph.svg">flamegraph</a>.  This flamegraph shows that
+<a href="https://akorotkov.github.io/images/runtimeappend_flamegraph.svg">flamegraph</a>.  This flamegraph shows that
 we spend very significant time for locking and unlocking every partition.
 Naturally, locking 365 partitions isn’t using fast-path locking and appears to
 be significant overhead.</p>
@@ -890,9 +1098,9 @@ of extension and proper solution requires hacking of PostgreSQL core.</p>
   
   <entry>
     <title type="html"><![CDATA[Drawing Graphs Directly in Psql]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/06/09/psql-graph/"/>
+    <link href="https://akorotkov.github.io/blog/2016/06/09/psql-graph/"/>
     <updated>2016-06-09T16:45:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/06/09/psql-graph</id>
+    <id>https://akorotkov.github.io/blog/2016/06/09/psql-graph/?utm_medium=social&amp;utm_source=rss</id>
     <content type="html"><![CDATA[<p>For people who are actively working with psql, it frequently happens that you
 want to draw graph for the table you’re currently seeing.  Typically, it means a
 cycle of actions including: exporting data, importing it into graph drawing tool
@@ -900,7 +1108,7 @@ and drawing graph itself.  It appears that this process could be automated:
 graph could be drawn by typing a single command directly in psql.  See an
 example on the screenshot below.</p>
 
-<p><img class="no-border center" src="http://akorotkov.github.io/images/screen-psql-iterm-graph.png" width="689" height="958" /></p>
+<p><img class="no-border center" src="https://akorotkov.github.io/images/screen-psql-iterm-graph.png" width="689" height="958" /></p>
 
 <!--more-->
 
@@ -909,7 +1117,7 @@ supports <a href="https://www.iterm2.com/documentation-images.html">image inlini
 since version 3 which is currently beta.  Thus, if we put image surrounded
 with corresponding escape sequences it will appear in the terminal.  From psql
 side we need to redirect output to the script which would do it.  We can define
-a macro for simplifying this like in <a href="http://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach/">one of my previous posts</a>.</p>
+a macro for simplifying this like in <a href="https://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach/">one of my previous posts</a>.</p>
 
 <div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 </pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="err">\</span><span class="k">set</span> <span class="n">graph</span> <span class="s1">&#39;\\g |pg_graph&#39;</span>
@@ -934,9 +1142,9 @@ output from scripts;</li>
   
   <entry>
     <title type="html"><![CDATA[PostgreSQL Scalability: Towards Millions TPS]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps/"/>
+    <link href="https://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps/"/>
     <updated>2016-05-09T12:50:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps</id>
+    <id>https://akorotkov.github.io/blog/2016/05/09/scalability-towards-millions-tps/?utm_medium=social&amp;utm_source=rss</id>
     <content type="html"><![CDATA[<p>PostgreSQL scalability on multicore and multisocket machines became a subject
 of optimization long time ago once such machines became widely used.
 <a href="http://suckit.blog.hu/2009/09/29/postgresql_history">This blog post</a> shows
@@ -967,7 +1175,7 @@ while optimization #2 is Power-specific.  After long rounds of optimization,
 cleaning and testing #1 was finally
 <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=48354581">committed by Andres Freund</a>.</p>
 
-<p><img class="no-border center 2x" src="http://akorotkov.github.io/images/scalability.png" width="720" height="576" /></p>
+<p><img class="no-border center 2x" src="https://akorotkov.github.io/images/scalability.png" width="720" height="576" /></p>
 
 <!--more-->
 
@@ -1020,9 +1228,9 @@ YUriy Zhuravlev who wrote original proof of concept of this patch;</li>
   
   <entry>
     <title type="html"><![CDATA[Extensible Access Methods Are Committed to 9.6]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/"/>
+    <link href="https://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/"/>
     <updated>2016-04-06T15:26:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/04/06/extensible-access-methods</id>
+    <id>https://akorotkov.github.io/blog/2016/04/06/extensible-access-methods/?utm_medium=social&amp;utm_source=rss</id>
     <content type="html"><![CDATA[<p>PostgreSQL 9.6 receives suitable support of extensible index access methods.
 And that’s good news because Postgres was initially designed to support it.</p>
 
@@ -1089,9 +1297,9 @@ storage engines.  I will speak about this during my
   
   <entry>
     <title type="html"><![CDATA[Monitoring Wait Events in PostgreSQL 9.6]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6/"/>
+    <link href="https://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6/"/>
     <updated>2016-03-25T18:00:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6</id>
+    <id>https://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6/?utm_medium=social&amp;utm_source=rss</id>
     <content type="html"><![CDATA[<p>Recently Robert Haas has <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=53be0b1a">committed</a> a patch which allows
 seeing some more detailed information about current wait event of the process.
 In particular, user will be able to see if process is waiting for heavyweight
@@ -1107,7 +1315,7 @@ to present <a href="https://github.com/postgrespro/pg_wait_sampling">pg_wait_sam
 which automates gathering sampling statistics of wait events.  pg_wait_sampling
 enables you to gather statistics for graphs like the one below.</p>
 
-<p><img class="no-border" src="http://akorotkov.github.io/images/wait_monitoring.png" width="629" height="638" /></p>
+<p><img class="no-border" src="https://akorotkov.github.io/images/wait_monitoring.png" width="629" height="638" /></p>
 
 <!--more-->
 
@@ -1284,9 +1492,9 @@ finally we would have something way more advanced for 9.7.</p>
   
   <entry>
     <title type="html"><![CDATA[Pg_pathman UPDATE and DELETE Support and Benchmark]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/"/>
+    <link href="https://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/"/>
     <updated>2016-03-18T12:20:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark</id>
+    <id>https://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/?utm_medium=social&amp;utm_source=rss</id>
     <content type="html"><![CDATA[<p>Recently <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> receives
 support of UPDATE and DELETE queries.  Because of some specialties of PostgreSQL
 query planner hooks, UPDATE and DELETE planning is accelerated only when only
@@ -1318,7 +1526,7 @@ Performance of following operations was compared:</p>
 <p>Benchmarks were done on 2 x Intel Xeon CPU X5675 @ 3.07GHz, 24 GB of memory
 server with fsync = off in 10 threads. See the results below.</p>
 
-<p><img class="no-border" src="http://akorotkov.github.io/images/pg_pathman_benchmarks.png" width="676" height="445" /></p>
+<p><img class="no-border" src="https://akorotkov.github.io/images/pg_pathman_benchmarks.png" width="676" height="445" /></p>
 
 <table>
   <thead>
@@ -1398,12 +1606,12 @@ a great extension which has served many years.</p>
   
   <entry>
     <title type="html"><![CDATA[How Does Pg_pathman Handle Filter Conditions?]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/"/>
+    <link href="https://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/"/>
     <updated>2016-03-14T11:10:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing</id>
-    <content type="html"><![CDATA[<p><img class="no-border right" src="http://akorotkov.github.io/images/filter_data_icon.jpg" width="256" height="256" /></p>
+    <id>https://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/?utm_medium=social&amp;utm_source=rss</id>
+    <content type="html"><![CDATA[<p><img class="no-border right" src="https://akorotkov.github.io/images/filter_data_icon.jpg" width="256" height="256" /></p>
 
-<p>In my <a href="http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve
+<p>In my <a href="https://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve
 introduced <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> as an
 extension which accelerate query planning over partitioned tables.  In this post
 I would like to covert another aspect of pg_pathman: it not only produce  plans
@@ -1566,7 +1774,7 @@ of transformation really exists.</p>
 '2015-02-01' AND ts &lt; '2015-03-15') OR (ts &gt;= '2015-05-15' AND ts &lt;
 '2015-07-01')</code> have following tree representation.</p>
 
-<p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_1.png" width="483" height="123" /></p>
+<p><img class="no-border center" src="https://akorotkov.github.io/images/pg_pathman_condition_1.png" width="483" height="123" /></p>
 
 <p>Leaf nodes of tree are simple conditions.  Non-leaf nodes are logical operators
 which forms complex conditions.  For particular partition each filter condition
@@ -1594,7 +1802,7 @@ instance, condition <code>ts &lt;= '2015-02-01'</code> is always false for parti
 is treated against each partition.  These vectors could be filled upwards: for
 leaf nodes first, and then for non-leaf nodes using tri-state logic.</p>
 
-<p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_2.png" width="543" height="144" /></p>
+<p><img class="no-border center" src="https://akorotkov.github.io/images/pg_pathman_condition_2.png" width="543" height="144" /></p>
 
 <p>It’s evident that only conditions which could be either true or false (m) are
 useful for filtering.  Conditions which are always true or always false
@@ -1614,7 +1822,7 @@ is true. So, scan it without filter.</p>
     <p>For <code>ts &gt;= 2015-03-01 AND ts &lt; 2015-04-01</code> partition, filter condition tree
 would be reduced into following tree.</p>
 
-    <p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_3.png" width="123" height="103" /></p>
+    <p><img class="no-border center" src="https://akorotkov.github.io/images/pg_pathman_condition_3.png" width="123" height="103" /></p>
 
     <p>Therefore, this partition will be scan with <code>ts &lt; '2015-03-15'</code> filter.</p>
   </li>
@@ -1626,7 +1834,7 @@ is false. So, skip it.</p>
     <p>For <code>ts &gt;= 2015-05-01 AND ts &lt; 2015-06-01</code> partition, filter condition tree
 would be reduced into following tree.</p>
 
-    <p><img class="no-border center" src="http://akorotkov.github.io/images/pg_pathman_condition_4.png" width="123" height="103" /></p>
+    <p><img class="no-border center" src="https://akorotkov.github.io/images/pg_pathman_condition_4.png" width="123" height="103" /></p>
 
     <p>Therefore, this partition will be scan with <code>ts &gt;= '2015-05-15'</code> filter.</p>
   </li>
@@ -1648,10 +1856,10 @@ sharing a feedback.</p>
   
   <entry>
     <title type="html"><![CDATA[Pg_pathman Beta Release]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/"/>
+    <link href="https://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/"/>
     <updated>2016-03-04T17:10:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release</id>
-    <content type="html"><![CDATA[<p><img class="no-border" src="http://akorotkov.github.io/images/partitiontable.jpg" width="640" height="373" /></p>
+    <id>https://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/?utm_medium=social&amp;utm_source=rss</id>
+    <content type="html"><![CDATA[<p><img class="no-border" src="https://akorotkov.github.io/images/partitiontable.jpg" width="640" height="373" /></p>
 
 <p>Partitioning in PostgreSQL is traditionally implemented using <a href="http://www.postgresql.org/docs/9.5/static/ddl-partitioning.html">table
 inheritance</a>.
@@ -1704,9 +1912,9 @@ infrastructure and fulfill it with effective internal algorithms.</p>
   
   <entry>
     <title type="html"><![CDATA[Thoughts About Jsonb Statistics]]></title>
-    <link href="http://akorotkov.github.io/blog/2015/09/07/jsonb_statistics/"/>
+    <link href="https://akorotkov.github.io/blog/2015/09/07/jsonb_statistics/"/>
     <updated>2015-09-07T11:30:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2015/09/07/jsonb_statistics</id>
+    <id>https://akorotkov.github.io/blog/2015/09/07/jsonb_statistics/?utm_medium=social&amp;utm_source=rss</id>
     <content type="html"><![CDATA[<h2 id="introduction">Introduction</h2>
 
 <p>Users of jsonb datatype frequently complaint that it lucks of statistics.
@@ -2115,9 +2323,9 @@ specific needs.</p>
   
   <entry>
     <title type="html"><![CDATA[Psql Command to Attach Gdb to Backend]]></title>
-    <link href="http://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach/"/>
+    <link href="https://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach/"/>
     <updated>2015-08-26T18:00:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach</id>
+    <id>https://akorotkov.github.io/blog/2015/08/26/psql-gdb-attach/?utm_medium=social&amp;utm_source=rss</id>
     <content type="html"><![CDATA[<p>While hacking PostgreSQL it’s very useful to know pid of the backend you are
 working with. You need to know pid of the process to attach debugger, profiler
 etc. Luckily, .psqlrc provides us an elegant way to define the shortcuts for
@@ -2146,7 +2354,7 @@ psql. Using config line below one can find out backend pid just by typing <code>
 my psql to run gdb attached to current backend in new tab of iTerm2 just by
 typing <code>:gdb</code>.</p>
 
-<p><img class="no-border" src="http://akorotkov.github.io/images/screen-psql-iterm-gdb.png" width="494" height="411" /></p>
+<p><img class="no-border" src="https://akorotkov.github.io/images/screen-psql-iterm-gdb.png" width="494" height="411" /></p>
 
 <!--more-->
 

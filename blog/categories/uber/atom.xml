@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Uber | Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/blog/categories/uber/atom.xml" rel="self"/>
-  <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-03T17:46:50+03:00</updated>
-  <id>http://akorotkov.github.io/</id>
+  <link href="https://akorotkov.github.io/blog/categories/uber/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-06T18:15:32+03:00</updated>
+  <id>https://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA["Our Answer to Uber" Talk at United Dev Conf, Minsk]]></title>
-    <link href="http://akorotkov.github.io/blog/2017/04/08/uber-answer/"/>
+    <link href="https://akorotkov.github.io/blog/2017/04/08/uber-answer/"/>
     <updated>2017-04-08T00:20:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2017/04/08/uber-answer</id>
+    <id>https://akorotkov.github.io/blog/2017/04/08/uber-answer</id>
     <content type="html"><![CDATA[<p>Today I gave a talk “Our answer to Uber” at United Dev Conf, Minsk.  Slides could be found at <a href="https://www.slideshare.net/AlexanderKorotkov/our-answer-to-uber/">slideshare</a>.  In my talk I attempted to make a review of <a href="https://eng.uber.com/mysql-migration/">Uber’s notes</a> and summarize community efforts to overcome highlighted shortcomings.</p>
 
 <p>United Dev Conf is quite big IT conference with more than 700 attendees.  I’d like to notice that interest in PostgreSQL is quire high.  The room was almost full during my talk.  Also, after the talk I was continuously giving answers to surroundings in about 1 hour.</p>

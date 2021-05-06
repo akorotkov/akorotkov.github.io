@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Jsonpath: ** Operator and Lax Mode Are't Meant to Be Together. - Alexander Korotkov's blog</title>
+  <meta name="author" content="Alexander Korotkov">
+
+  
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="https://akorotkov.github.io/blog/2021/05/06/jsonpath-double-asterisk-lax/">
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link href="/atom.xml" rel="alternate" title="Alexander Korotkov's blog" type="application/atom+xml">
+
+  <!-- http://opengraphprotocol.org/ -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://akorotkov.github.io/blog/2021/05/06/jsonpath-double-asterisk-lax/">
+  <meta property="og:title" content="Jsonpath: ** Operator and Lax Mode Are't Meant to Be Together. - Alexander Korotkov's blog">
+  
+
+  <script src="/javascripts/libs/jquery/jquery-2.1.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection, print" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+  <body   >
+    <a href="#content" class="sr-only sr-only-focusable">Skip to main content</a>
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" title="toggle navbar" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Alexander Korotkov's blog</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li>
+                    <a href="/about">About me</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="/atom.xml" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="navbar-form navbar-right" action="https://www.google.com/search" method="GET">
+                    <input type="hidden" name="sitesearch" value="akorotkov.github.io">
+                    <div class="form-group">
+                        <input class="form-control" type="text" name="q" placeholder="Search">
+                    </div>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" role="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Alexander Korotkov's blog" />
+    
+    <meta itemprop="url" content="https://akorotkov.github.io" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2021-05-06T18:15:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Thu  6 May 2021,  6:15 PM</time>
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Jsonpath: ** Operator and Lax Mode Are't Meant to Be Together.
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border 2x" src="/images/double_asterisk_lax.png" width="529" height="221" /></p>
+
+<p>PostgreSQL has an extension to jsonpath: <code>**</code> operator, which explores
+arbitrary depth finding your values everywhere.  At the same time, there is
+a <code>lax</code> mode, defined by the standard, providing a “relaxed” way for working
+with json.  In the <code>lax</code> mode, accessors automatically unwrap arrays; missing
+keys don’t trigger errors; etc.  In short, it appears that the <code>**</code> operator
+and <code>lax</code> mode aren’t designed to be together :)</p>
+
+<!--more-->
+
+<p>The story started with <a href="https://www.postgresql.org/message-id/16828-2b0229babfad2d8c%40postgresql.org">the bug report</a>.
+The simplified version is below.  Jsonpath query is intended to select the
+value of key <code>"y"</code> everywhere.  But it appears to select these values twice.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">jsonb_path_query</span><span class="p">(</span><span class="s1">&#39;[{&quot;x&quot;: &quot;a&quot;, &quot;y&quot;: [{&quot;x&quot;:&quot;b&quot;}]}]&#39;</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
+</span><span class="line">                                 <span class="s1">&#39;$.**.x&#39;</span><span class="p">);</span>
+</span><span class="line"> <span class="n">jsonb_path_query</span>
+</span><span class="line"><span class="c1">------------------</span>
+</span><span class="line"> <span class="ss">&quot;a&quot;</span>
+</span><span class="line"> <span class="ss">&quot;a&quot;</span>
+</span><span class="line"> <span class="ss">&quot;b&quot;</span>
+</span><span class="line"> <span class="ss">&quot;b&quot;</span>
+</span><span class="line"><span class="p">(</span><span class="mi">4</span> <span class="k">rows</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>This case looks like a bug. But is it? Let’s dig into details. Let’s split
+the jsonpath query into two parts: one containing the <code>**</code> operator and another
+having the key accessor.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">SELECT</span> <span class="n">var</span><span class="p">,</span>
+</span><span class="line">         <span class="n">jsonb_path_query_array</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="s1">&#39;$.x&#39;</span><span class="p">)</span> <span class="n">key_x</span>
+</span><span class="line">  <span class="k">FROM</span> <span class="n">jsonb_path_query</span><span class="p">(</span><span class="s1">&#39;[{&quot;x&quot;: &quot;a&quot;, &quot;y&quot;: [{&quot;x&quot;:&quot;b&quot;}]}]&#39;</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
+</span><span class="line">                        <span class="s1">&#39;$.**&#39;</span><span class="p">)</span> <span class="n">var</span><span class="p">;</span>
+</span><span class="line">               <span class="n">var</span>               <span class="o">|</span> <span class="n">key_x</span>
+</span><span class="line"><span class="c1">---------------------------------+-------</span>
+</span><span class="line"> <span class="p">[</span><span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;a&quot;</span><span class="p">,</span> <span class="ss">&quot;y&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;b&quot;</span><span class="err">}</span><span class="p">]</span><span class="err">}</span><span class="p">]</span> <span class="o">|</span> <span class="p">[</span><span class="ss">&quot;a&quot;</span><span class="p">]</span>
+</span><span class="line"> <span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;a&quot;</span><span class="p">,</span> <span class="ss">&quot;y&quot;</span><span class="p">:</span> <span class="p">[</span><span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;b&quot;</span><span class="err">}</span><span class="p">]</span><span class="err">}</span>   <span class="o">|</span> <span class="p">[</span><span class="ss">&quot;a&quot;</span><span class="p">]</span>
+</span><span class="line"> <span class="ss">&quot;a&quot;</span>                             <span class="o">|</span> <span class="p">[]</span>
+</span><span class="line"> <span class="p">[</span><span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;b&quot;</span><span class="err">}</span><span class="p">]</span>                    <span class="o">|</span> <span class="p">[</span><span class="ss">&quot;b&quot;</span><span class="p">]</span>
+</span><span class="line"> <span class="err">{</span><span class="ss">&quot;x&quot;</span><span class="p">:</span> <span class="ss">&quot;b&quot;</span><span class="err">}</span>                      <span class="o">|</span> <span class="p">[</span><span class="ss">&quot;b&quot;</span><span class="p">]</span>
+</span><span class="line"> <span class="ss">&quot;b&quot;</span>                             <span class="o">|</span> <span class="p">[]</span>
+</span><span class="line"><span class="p">(</span><span class="mi">6</span> <span class="k">rows</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>As you can see, the <code>**</code> operator selects every child in the json document as
+expected. The key accessor extracts corresponding values from both objects
+themselves and their wrapping arrays. And that’s also expected in the <code>lax</code>
+mode. So, it appears there is no bug; everything works as designed, although
+it’s surprising for users.</p>
+
+<p>Finally, I’ve <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=b41645460a">committed a paragraph</a> to the
+<a href="https://www.postgresql.org/docs/devel/functions-json.html#STRICT-AND-LAX-MODES">docs</a>,
+which explicitly clarifies this issue.
+It seems that <code>lax</code> mode and <code>**</code> operator just aren’t designed to be
+used together.  If you need <code>**</code> operator, you can use <code>strict</code> mode. and
+everything is intuitively correct.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">jsonb_path_query</span><span class="p">(</span><span class="s1">&#39;[{&quot;x&quot;: &quot;a&quot;, &quot;y&quot;: [{&quot;x&quot;:&quot;b&quot;}]}]&#39;</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
+</span><span class="line">                                 <span class="s1">&#39;strict $.**.x&#39;</span><span class="p">);</span>
+</span><span class="line"> <span class="n">jsonb_path_query</span>
+</span><span class="line"><span class="c1">------------------</span>
+</span><span class="line"> <span class="ss">&quot;a&quot;</span>
+</span><span class="line"> <span class="ss">&quot;b&quot;</span>
+</span><span class="line"><span class="p">(</span><span class="mi">2</span> <span class="k">rows</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+</div>
+
+
+      <footer>
+        <p class="meta text-muted">
+          
+  
+
+<span class="glyphicon glyphicon-user"></span> <span class="byline author vcard" itemprop="author" itemscope itemtype="http://schema.org/Person">Posted by <span class="fn" itemprop="name">Alexander Korotkov</span></span>
+
+          
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2021-05-06T18:15:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Thu  6 May 2021,  6:15 PM</time>
+          
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp;
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/jsonpath/'>jsonpath</a>, <a class='category' href='/blog/categories/lax/'>lax</a>, <a class='category' href='/blog/categories/pg/'>pg</a>, <a class='category' href='/blog/categories/wildcard/'>wildcard</a>
+  
+</span>
+
+
+        </p>
+        
+          <div class="sharing">
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/2021/05/06/jsonpath-double-asterisk-lax/" title="Previous Post: jsonpath: ** operator and lax mode are't meant to be together.">&laquo; jsonpath: ** operator and lax mode are't meant to be together.</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h2>Comments</h2>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      <section class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Recent Posts</h3>
+  </div>
+  
+  <div id="recent_posts" class="list-group">
+    
+    <a class="list-group-item active" href="/blog/2021/05/06/jsonpath-double-asterisk-lax/">Jsonpath: ** Operator and Lax Mode Are't Meant to Be Together.</a>
+    
+    <a class="list-group-item active" href="/blog/2021/05/06/jsonpath-double-asterisk-lax/">Jsonpath: ** Operator and Lax Mode Are't Meant to Be Together.</a>
+    
+    <a class="list-group-item " href="/blog/2021/04/30/arm/">Dramatical Effect of LSE Instructions for PostgreSQL on Graviton2 Instances</a>
+    
+    <a class="list-group-item " href="/blog/2018/02/17/fulltext-search-made-almost-right/">Full Text Search Done (Almost) Right in PostgreSQL 11</a>
+    
+    <a class="list-group-item " href="/blog/2017/05/31/alter-index-weird/">ALTER INDEX ... SET STATISTICS ...???</a>
+    
+  </div>
+</section>
+
+
+
+
+
+
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2021 - Alexander Korotkov<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'akorotkov';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'https://akorotkov.github.io/blog/2021/05/06/jsonpath-double-asterisk-lax/';
+        var disqus_url = 'https://akorotkov.github.io/blog/2021/05/06/jsonpath-double-asterisk-lax/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr.js"></script>
+<script src="/javascripts/retina.js"></script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-77524230-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>

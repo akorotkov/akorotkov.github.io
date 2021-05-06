@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Delete | Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/blog/categories/delete/atom.xml" rel="self"/>
-  <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-03T17:46:50+03:00</updated>
-  <id>http://akorotkov.github.io/</id>
+  <link href="https://akorotkov.github.io/blog/categories/delete/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-06T18:15:32+03:00</updated>
+  <id>https://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Pg_pathman UPDATE and DELETE Support and Benchmark]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/"/>
+    <link href="https://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/"/>
     <updated>2016-03-18T12:20:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark</id>
+    <id>https://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark</id>
     <content type="html"><![CDATA[<p>Recently <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> receives
 support of UPDATE and DELETE queries.  Because of some specialties of PostgreSQL
 query planner hooks, UPDATE and DELETE planning is accelerated only when only

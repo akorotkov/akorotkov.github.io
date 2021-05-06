@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Faceted Search | Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/blog/categories/faceted-search/atom.xml" rel="self"/>
-  <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-03T17:46:50+03:00</updated>
-  <id>http://akorotkov.github.io/</id>
+  <link href="https://akorotkov.github.io/blog/categories/faceted-search/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-06T18:15:32+03:00</updated>
+  <id>https://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Faceted Search in the Single PostgreSQL Query]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/06/17/faceted-search/"/>
+    <link href="https://akorotkov.github.io/blog/2016/06/17/faceted-search/"/>
     <updated>2016-06-17T14:20:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/06/17/faceted-search</id>
+    <id>https://akorotkov.github.io/blog/2016/06/17/faceted-search</id>
     <content type="html"><![CDATA[<p>Faceted search is very popular buzzword nowadays.  In short, faceted search
 specialty is that its results are organized per category.  Popular search
 engines are receiving special support of faceted search.</p>

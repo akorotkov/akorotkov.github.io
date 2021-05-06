@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Sampling | Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/blog/categories/sampling/atom.xml" rel="self"/>
-  <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-03T17:46:50+03:00</updated>
-  <id>http://akorotkov.github.io/</id>
+  <link href="https://akorotkov.github.io/blog/categories/sampling/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-06T18:15:32+03:00</updated>
+  <id>https://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Monitoring Wait Events in PostgreSQL 9.6]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6/"/>
+    <link href="https://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6/"/>
     <updated>2016-03-25T18:00:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6</id>
+    <id>https://akorotkov.github.io/blog/2016/03/25/wait_monitoring_9_6</id>
     <content type="html"><![CDATA[<p>Recently Robert Haas has <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=53be0b1a">committed</a> a patch which allows
 seeing some more detailed information about current wait event of the process.
 In particular, user will be able to see if process is waiting for heavyweight

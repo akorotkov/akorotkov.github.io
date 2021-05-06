@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Graph | Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/blog/categories/graph/atom.xml" rel="self"/>
-  <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-03T17:46:50+03:00</updated>
-  <id>http://akorotkov.github.io/</id>
+  <link href="https://akorotkov.github.io/blog/categories/graph/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-06T18:15:32+03:00</updated>
+  <id>https://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Drawing Graphs Directly in Psql]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/06/09/psql-graph/"/>
+    <link href="https://akorotkov.github.io/blog/2016/06/09/psql-graph/"/>
     <updated>2016-06-09T16:45:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/06/09/psql-graph</id>
+    <id>https://akorotkov.github.io/blog/2016/06/09/psql-graph</id>
     <content type="html"><![CDATA[<p>For people who are actively working with psql, it frequently happens that you
 want to draw graph for the table you’re currently seeing.  Typically, it means a
 cycle of actions including: exporting data, importing it into graph drawing tool

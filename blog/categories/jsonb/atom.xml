@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Jsonb | Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/blog/categories/jsonb/atom.xml" rel="self"/>
-  <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-03T17:46:50+03:00</updated>
-  <id>http://akorotkov.github.io/</id>
+  <link href="https://akorotkov.github.io/blog/categories/jsonb/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-06T18:15:32+03:00</updated>
+  <id>https://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Thoughts About Jsonb Statistics]]></title>
-    <link href="http://akorotkov.github.io/blog/2015/09/07/jsonb_statistics/"/>
+    <link href="https://akorotkov.github.io/blog/2015/09/07/jsonb_statistics/"/>
     <updated>2015-09-07T11:30:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2015/09/07/jsonb_statistics</id>
+    <id>https://akorotkov.github.io/blog/2015/09/07/jsonb_statistics</id>
     <content type="html"><![CDATA[<h2 id="introduction">Introduction</h2>
 
 <p>Users of jsonb datatype frequently complaint that it lucks of statistics.

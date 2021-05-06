@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Arm | Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/blog/categories/arm/atom.xml" rel="self"/>
-  <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-03T17:46:50+03:00</updated>
-  <id>http://akorotkov.github.io/</id>
+  <link href="https://akorotkov.github.io/blog/categories/arm/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-06T18:15:32+03:00</updated>
+  <id>https://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Dramatical Effect of LSE Instructions for PostgreSQL on Graviton2 Instances]]></title>
-    <link href="http://akorotkov.github.io/blog/2021/04/30/arm/"/>
+    <link href="https://akorotkov.github.io/blog/2021/04/30/arm/"/>
     <updated>2021-04-30T03:10:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2021/04/30/arm</id>
+    <id>https://akorotkov.github.io/blog/2021/04/30/arm</id>
     <content type="html"><![CDATA[<p>The world changes. ARM architecture breaks into new areas of computing. An only
 decade ago, only your mobile, router, or another specialized device could be
 ARM-based, while your desktop and server were typically x86-based. Nowadays,

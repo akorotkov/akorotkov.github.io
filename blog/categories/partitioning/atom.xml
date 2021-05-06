@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Partitioning | Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/blog/categories/partitioning/atom.xml" rel="self"/>
-  <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-03T17:46:50+03:00</updated>
-  <id>http://akorotkov.github.io/</id>
+  <link href="https://akorotkov.github.io/blog/categories/partitioning/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-06T18:15:32+03:00</updated>
+  <id>https://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[RuntimeAppend in Pg_pathman: Achievements and New Challenges]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append/"/>
+    <link href="https://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append/"/>
     <updated>2016-06-15T15:00:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append</id>
+    <id>https://akorotkov.github.io/blog/2016/06/15/pg_pathman-runtime-append</id>
     <content type="html"><![CDATA[<p>Dealing with partitioned tables we can’t always select relevant partitions
 during query planning.  Naturally, during query planning you can’t know values
 which come from subquery or outer part of nested loop join.  Nevertheless, it
@@ -138,9 +138,9 @@ of extension and proper solution requires hacking of PostgreSQL core.</p>
   
   <entry>
     <title type="html"><![CDATA[Pg_pathman UPDATE and DELETE Support and Benchmark]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/"/>
+    <link href="https://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark/"/>
     <updated>2016-03-18T12:20:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark</id>
+    <id>https://akorotkov.github.io/blog/2016/03/18/pg_pathman-update-delete-benchmark</id>
     <content type="html"><![CDATA[<p>Recently <a href="https://github.com/postgrespro/pg_pathman">pg_pathman</a> receives
 support of UPDATE and DELETE queries.  Because of some specialties of PostgreSQL
 query planner hooks, UPDATE and DELETE planning is accelerated only when only
@@ -252,9 +252,9 @@ a great extension which has served many years.</p>
   
   <entry>
     <title type="html"><![CDATA[How Does Pg_pathman Handle Filter Conditions?]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/"/>
+    <link href="https://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing/"/>
     <updated>2016-03-14T11:10:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing</id>
+    <id>https://akorotkov.github.io/blog/2016/03/14/pg_pathman-condition-processing</id>
     <content type="html"><![CDATA[<p><img class="no-border right" src="/images/filter_data_icon.jpg" width="256" height="256"></p>
 
 <p>In my <a href="/blog/2016/03/04/pg_pathman-beta-release/">previous post</a> I’ve
@@ -502,9 +502,9 @@ sharing a feedback.</p>
   
   <entry>
     <title type="html"><![CDATA[Pg_pathman Beta Release]]></title>
-    <link href="http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/"/>
+    <link href="https://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release/"/>
     <updated>2016-03-04T17:10:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release</id>
+    <id>https://akorotkov.github.io/blog/2016/03/04/pg_pathman-beta-release</id>
     <content type="html"><![CDATA[<p><img class="no-border" src="/images/partitiontable.jpg" width="640" height="373"></p>
 
 <p>Partitioning in PostgreSQL is traditionally implemented using <a href="http://www.postgresql.org/docs/9.5/static/ddl-partitioning.html">table

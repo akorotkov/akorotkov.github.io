@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Count | Alexander Korotkov's blog]]></title>
-  <link href="http://akorotkov.github.io/blog/categories/count/atom.xml" rel="self"/>
-  <link href="http://akorotkov.github.io/"/>
-  <updated>2021-05-03T17:46:50+03:00</updated>
-  <id>http://akorotkov.github.io/</id>
+  <link href="https://akorotkov.github.io/blog/categories/count/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-06T18:15:32+03:00</updated>
+  <id>https://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Full Text Search Done (Almost) Right in PostgreSQL 11]]></title>
-    <link href="http://akorotkov.github.io/blog/2018/02/17/fulltext-search-made-almost-right/"/>
+    <link href="https://akorotkov.github.io/blog/2018/02/17/fulltext-search-made-almost-right/"/>
     <updated>2018-02-17T18:20:00+03:00</updated>
-    <id>http://akorotkov.github.io/blog/2018/02/17/fulltext-search-made-almost-right</id>
+    <id>https://akorotkov.github.io/blog/2018/02/17/fulltext-search-made-almost-right</id>
     <content type="html"><![CDATA[<p>Long story short, using PostgreSQL 11 with <a href="https://github.com/postgrespro/rum">RUM index</a>
 you can do both TOP-N query and COUNT(*) for non-selective FTS queries without
 fetching all the results from heap (that means much faster).  Are you bored yet?

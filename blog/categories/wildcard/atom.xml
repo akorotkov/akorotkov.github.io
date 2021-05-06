@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Wildcard | Alexander Korotkov's blog]]></title>
+  <link href="https://akorotkov.github.io/blog/categories/wildcard/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-06T18:15:32+03:00</updated>
+  <id>https://akorotkov.github.io/</id>
+  <author>
+    <name><![CDATA[Alexander Korotkov]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Jsonpath: ** Operator and Lax Mode Are't Meant to Be Together.]]></title>
+    <link href="https://akorotkov.github.io/blog/2021/05/06/jsonpath-double-asterisk-lax/"/>
+    <updated>2021-05-06T18:15:00+03:00</updated>
+    <id>https://akorotkov.github.io/blog/2021/05/06/jsonpath-double-asterisk-lax</id>
+    <content type="html"><![CDATA[<p><img class="no-border 2x" src="/images/double_asterisk_lax.png" width="529" height="221"></p>
+
+<p>PostgreSQL has an extension to jsonpath: <code>**</code> operator, which explores
+arbitrary depth finding your values everywhere.  At the same time, there is
+a <code>lax</code> mode, defined by the standard, providing a “relaxed” way for working
+with json.  In the <code>lax</code> mode, accessors automatically unwrap arrays; missing
+keys don’t trigger errors; etc.  In short, it appears that the <code>**</code> operator
+and <code>lax</code> mode aren’t designed to be together :)</p>
+
+<!--more-->
+
+<p>The story started with <a href="https://www.postgresql.org/message-id/16828-2b0229babfad2d8c%40postgresql.org">the bug report</a>.
+The simplified version is below.  Jsonpath query is intended to select the
+value of key <code>"y"</code> everywhere.  But it appears to select these values twice.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="o">#</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">jsonb_path_query</span><span class="p">(</span><span class="err">‘</span><span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">a</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">y</span><span class="err">”</span><span class="p">:</span> <span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span><span class="err">”</span><span class="n">b</span><span class="err">”}</span><span class="p">]</span><span class="err">}</span><span class="p">]</span><span class="err">’</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
+</span><span class='line'>                                 <span class="err">‘$</span><span class="p">.</span><span class="o">**</span><span class="p">.</span><span class="n">x</span><span class="err">’</span><span class="p">);</span>
+</span><span class='line'> <span class="n">jsonb_path_query</span>
+</span><span class='line'><span class="err">——————</span>
+</span><span class='line'> <span class="err">“</span><span class="n">a</span><span class="err">”</span>
+</span><span class='line'> <span class="err">“</span><span class="n">a</span><span class="err">”</span>
+</span><span class='line'> <span class="err">“</span><span class="n">b</span><span class="err">”</span>
+</span><span class='line'> <span class="err">“</span><span class="n">b</span><span class="err">”</span>
+</span><span class='line'><span class="p">(</span><span class="mi">4</span> <span class="k">rows</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>This case looks like a bug. But is it? Let’s dig into details. Let’s split
+the jsonpath query into two parts: one containing the <code>**</code> operator and another
+having the key accessor.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="o">#</span> <span class="k">SELECT</span> <span class="n">var</span><span class="p">,</span>
+</span><span class='line'>         <span class="n">jsonb_path_query_array</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="err">‘$</span><span class="p">.</span><span class="n">x</span><span class="err">’</span><span class="p">)</span> <span class="n">key_x</span>
+</span><span class='line'>  <span class="k">FROM</span> <span class="n">jsonb_path_query</span><span class="p">(</span><span class="err">‘</span><span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">a</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">y</span><span class="err">”</span><span class="p">:</span> <span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span><span class="err">”</span><span class="n">b</span><span class="err">”}</span><span class="p">]</span><span class="err">}</span><span class="p">]</span><span class="err">’</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
+</span><span class='line'>                        <span class="err">‘$</span><span class="p">.</span><span class="o">**</span><span class="err">’</span><span class="p">)</span> <span class="n">var</span><span class="p">;</span>
+</span><span class='line'>               <span class="n">var</span>               <span class="o">|</span> <span class="n">key_x</span>
+</span><span class='line'><span class="err">———————————</span><span class="o">+</span><span class="err">——</span><span class="o">-</span>
+</span><span class='line'> <span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">a</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">y</span><span class="err">”</span><span class="p">:</span> <span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">b</span><span class="err">”}</span><span class="p">]</span><span class="err">}</span><span class="p">]</span> <span class="o">|</span> <span class="p">[</span><span class="err">“</span><span class="n">a</span><span class="err">”</span><span class="p">]</span>
+</span><span class='line'> <span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">a</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">y</span><span class="err">”</span><span class="p">:</span> <span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">b</span><span class="err">”}</span><span class="p">]</span><span class="err">}</span>   <span class="o">|</span> <span class="p">[</span><span class="err">“</span><span class="n">a</span><span class="err">”</span><span class="p">]</span>
+</span><span class='line'> <span class="err">“</span><span class="n">a</span><span class="err">”</span>                             <span class="o">|</span> <span class="p">[]</span>
+</span><span class='line'> <span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">b</span><span class="err">”}</span><span class="p">]</span>                    <span class="o">|</span> <span class="p">[</span><span class="err">“</span><span class="n">b</span><span class="err">”</span><span class="p">]</span>
+</span><span class='line'> <span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">b</span><span class="err">”}</span>                      <span class="o">|</span> <span class="p">[</span><span class="err">“</span><span class="n">b</span><span class="err">”</span><span class="p">]</span>
+</span><span class='line'> <span class="err">“</span><span class="n">b</span><span class="err">”</span>                             <span class="o">|</span> <span class="p">[]</span>
+</span><span class='line'><span class="p">(</span><span class="mi">6</span> <span class="k">rows</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>As you can see, the <code>**</code> operator selects every child in the json document as
+expected. The key accessor extracts corresponding values from both objects
+themselves and their wrapping arrays. And that’s also expected in the <code>lax</code>
+mode. So, it appears there is no bug; everything works as designed, although
+it’s surprising for users.</p>
+
+<p>Finally, I’ve <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=b41645460a">committed a paragraph</a> to the
+<a href="https://www.postgresql.org/docs/devel/functions-json.html#STRICT-AND-LAX-MODES">docs</a>,
+which explicitly clarifies this issue.
+It seems that <code>lax</code> mode and <code>**</code> operator just aren’t designed to be
+used together.  If you need <code>**</code> operator, you can use <code>strict</code> mode. and
+everything is intuitively correct.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="o">#</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">jsonb_path_query</span><span class="p">(</span><span class="err">‘</span><span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">a</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">y</span><span class="err">”</span><span class="p">:</span> <span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span><span class="err">”</span><span class="n">b</span><span class="err">”}</span><span class="p">]</span><span class="err">}</span><span class="p">]</span><span class="err">’</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
+</span><span class='line'>                                 <span class="err">‘</span><span class="k">strict</span> <span class="err">$</span><span class="p">.</span><span class="o">**</span><span class="p">.</span><span class="n">x</span><span class="err">’</span><span class="p">);</span>
+</span><span class='line'> <span class="n">jsonb_path_query</span>
+</span><span class='line'><span class="err">——————</span>
+</span><span class='line'> <span class="err">“</span><span class="n">a</span><span class="err">”</span>
+</span><span class='line'> <span class="err">“</span><span class="n">b</span><span class="err">”</span>
+</span><span class='line'><span class="p">(</span><span class="mi">2</span> <span class="k">rows</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Jsonpath: ** Operator and Lax Mode Are't Meant to Be Together.]]></title>
+    <link href="https://akorotkov.github.io/blog/2021/05/06/jsonpath-double-asterisk-lax/"/>
+    <updated>2021-05-06T18:10:00+03:00</updated>
+    <id>https://akorotkov.github.io/blog/2021/05/06/jsonpath-double-asterisk-lax</id>
+    <content type="html"><![CDATA[<p><img class="no-border 2x" src="/images/double_asterisk_lax.png" width="529" height="221"></p>
+
+<p>PostgreSQL has an extension to jsonpath: <code>**</code> operator, which explores
+arbitrary depth finding your values everywhere.  At the same time, there is
+a <code>lax</code> mode, defined by the standard, providing a “relaxed” way for working
+with json.  In the <code>lax</code> mode, accessors automatically unwrap arrays; missing
+keys don’t trigger errors; etc.  In short, it appears that the <code>**</code> operator
+and <code>lax</code> mode aren’t designed to be together :)</p>
+
+<!--more-->
+
+<p>The story started with <a href="https://www.postgresql.org/message-id/16828-2b0229babfad2d8c%40postgresql.org">the bug report</a>.
+The simplified version is below.  Jsonpath query is intended to select the
+value of key <code>"y"</code> everywhere.  But it appears to select these values twice.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="o">#</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">jsonb_path_query</span><span class="p">(</span><span class="err">‘</span><span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">a</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">y</span><span class="err">”</span><span class="p">:</span> <span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span><span class="err">”</span><span class="n">b</span><span class="err">”}</span><span class="p">]</span><span class="err">}</span><span class="p">]</span><span class="err">’</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
+</span><span class='line'>                                 <span class="err">‘$</span><span class="p">.</span><span class="o">**</span><span class="p">.</span><span class="n">x</span><span class="err">’</span><span class="p">);</span>
+</span><span class='line'> <span class="n">jsonb_path_query</span>
+</span><span class='line'><span class="err">——————</span>
+</span><span class='line'> <span class="err">“</span><span class="n">a</span><span class="err">”</span>
+</span><span class='line'> <span class="err">“</span><span class="n">a</span><span class="err">”</span>
+</span><span class='line'> <span class="err">“</span><span class="n">b</span><span class="err">”</span>
+</span><span class='line'> <span class="err">“</span><span class="n">b</span><span class="err">”</span>
+</span><span class='line'><span class="p">(</span><span class="mi">4</span> <span class="k">rows</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>This case looks like a bug. But is it? Let’s dig into details. Let’s split
+the jsonpath query into two parts: one containing the <code>**</code> operator and another
+having the key accessor.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="o">#</span> <span class="k">SELECT</span> <span class="n">var</span><span class="p">,</span>
+</span><span class='line'>         <span class="n">jsonb_path_query_array</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="err">‘$</span><span class="p">.</span><span class="n">x</span><span class="err">’</span><span class="p">)</span> <span class="n">key_x</span>
+</span><span class='line'>  <span class="k">FROM</span> <span class="n">jsonb_path_query</span><span class="p">(</span><span class="err">‘</span><span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">a</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">y</span><span class="err">”</span><span class="p">:</span> <span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span><span class="err">”</span><span class="n">b</span><span class="err">”}</span><span class="p">]</span><span class="err">}</span><span class="p">]</span><span class="err">’</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
+</span><span class='line'>                        <span class="err">‘$</span><span class="p">.</span><span class="o">**</span><span class="err">’</span><span class="p">)</span> <span class="n">var</span><span class="p">;</span>
+</span><span class='line'>               <span class="n">var</span>               <span class="o">|</span> <span class="n">key_x</span>
+</span><span class='line'><span class="err">———————————</span><span class="o">+</span><span class="err">——</span><span class="o">-</span>
+</span><span class='line'> <span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">a</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">y</span><span class="err">”</span><span class="p">:</span> <span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">b</span><span class="err">”}</span><span class="p">]</span><span class="err">}</span><span class="p">]</span> <span class="o">|</span> <span class="p">[</span><span class="err">“</span><span class="n">a</span><span class="err">”</span><span class="p">]</span>
+</span><span class='line'> <span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">a</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">y</span><span class="err">”</span><span class="p">:</span> <span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">b</span><span class="err">”}</span><span class="p">]</span><span class="err">}</span>   <span class="o">|</span> <span class="p">[</span><span class="err">“</span><span class="n">a</span><span class="err">”</span><span class="p">]</span>
+</span><span class='line'> <span class="err">“</span><span class="n">a</span><span class="err">”</span>                             <span class="o">|</span> <span class="p">[]</span>
+</span><span class='line'> <span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">b</span><span class="err">”}</span><span class="p">]</span>                    <span class="o">|</span> <span class="p">[</span><span class="err">“</span><span class="n">b</span><span class="err">”</span><span class="p">]</span>
+</span><span class='line'> <span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">b</span><span class="err">”}</span>                      <span class="o">|</span> <span class="p">[</span><span class="err">“</span><span class="n">b</span><span class="err">”</span><span class="p">]</span>
+</span><span class='line'> <span class="err">“</span><span class="n">b</span><span class="err">”</span>                             <span class="o">|</span> <span class="p">[]</span>
+</span><span class='line'><span class="p">(</span><span class="mi">6</span> <span class="k">rows</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>As you can see, the <code>**</code> operator selects every child in the json document as
+expected. The key accessor extracts corresponding values from both objects
+themselves and their wrapping arrays. And that’s also expected in the <code>lax</code>
+mode. So, it appears there is no bug; everything works as designed, although
+it’s surprising for users.</p>
+
+<p>Finally, I’ve <a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=b41645460a">committed a paragraph</a> to the
+<a href="https://www.postgresql.org/docs/devel/functions-json.html#STRICT-AND-LAX-MODES">docs</a>,
+which explicitly clarifies this issue.
+It seems that <code>lax</code> mode and <code>**</code> operator just aren’t designed to be
+used together.  If you need <code>**</code> operator, you can use <code>strict</code> mode. and
+everything is intuitively correct.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="o">#</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">jsonb_path_query</span><span class="p">(</span><span class="err">‘</span><span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span> <span class="err">“</span><span class="n">a</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">y</span><span class="err">”</span><span class="p">:</span> <span class="p">[</span><span class="err">{“</span><span class="n">x</span><span class="err">”</span><span class="p">:</span><span class="err">”</span><span class="n">b</span><span class="err">”}</span><span class="p">]</span><span class="err">}</span><span class="p">]</span><span class="err">’</span><span class="p">::</span><span class="n">jsonb</span><span class="p">,</span>
+</span><span class='line'>                                 <span class="err">‘</span><span class="k">strict</span> <span class="err">$</span><span class="p">.</span><span class="o">**</span><span class="p">.</span><span class="n">x</span><span class="err">’</span><span class="p">);</span>
+</span><span class='line'> <span class="n">jsonb_path_query</span>
+</span><span class='line'><span class="err">——————</span>
+</span><span class='line'> <span class="err">“</span><span class="n">a</span><span class="err">”</span>
+</span><span class='line'> <span class="err">“</span><span class="n">b</span><span class="err">”</span>
+</span><span class='line'><span class="p">(</span><span class="mi">2</span> <span class="k">rows</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+]]></content>
+  </entry>
+  
+</feed>
