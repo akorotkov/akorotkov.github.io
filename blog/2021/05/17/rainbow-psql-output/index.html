@@ -2,10 +2,10 @@
 <html class="no-js" lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Category: Partitioning - Alexander Korotkov's blog</title>
+  <title>Rainbow Your Psql Output - Alexander Korotkov's blog</title>
   <meta name="author" content="Alexander Korotkov">
 
-  <meta name="description" content="Category: partitioning">
+  
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -14,16 +14,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="https://akorotkov.github.io/blog/categories/partitioning/">
+  <link rel="canonical" href="https://akorotkov.github.io/blog/2021/05/17/rainbow-psql-output/">
   <link href="/favicon.png" type="image/png" rel="icon">
   <link href="/atom.xml" rel="alternate" title="Alexander Korotkov's blog" type="application/atom+xml">
 
   <!-- http://opengraphprotocol.org/ -->
   <meta name="twitter:card" content="summary_large_image">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://akorotkov.github.io/blog/categories/partitioning/">
-  <meta property="og:title" content="Category: Partitioning - Alexander Korotkov's blog">
-  <meta property="og:description" content="Category: partitioning">
+  <meta property="og:url" content="https://akorotkov.github.io/blog/2021/05/17/rainbow-psql-output/">
+  <meta property="og:title" content="Rainbow Your Psql Output - Alexander Korotkov's blog">
+  
 
   <script src="/javascripts/libs/jquery/jquery-2.1.3.min.js"></script>
 
@@ -55,10 +55,10 @@
 
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
-                <li >
+                <li class="active">
                     <a rel="index" href="/">Blog</a>
                 </li>
-                <li class="active">
+                <li >
                     <a href="/blog/archives">Archives</a>
                 </li>
                 <li>
@@ -91,35 +91,21 @@
       <div id="main" role="main" class="container">
         <div id="content">
           <div class="row">
-  <div class="page-content col-md-9">
-    <article role="article">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Alexander Korotkov's blog" />
+    
+    <meta itemprop="url" content="https://akorotkov.github.io" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
       
-        <header class="page-header">
-          
-          
-            <h1 class="entry-title">
-              Category: Partitioning
-              
-            </h1>
-          
-        </header>
-      
-      <div class="entry-content">
-        <div id="blog-archives" class="category" itemscope itemtype="http://schema.org/Blog">
-<meta itemprop="name" content="Alexander Korotkov's blog" />
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
 
-<meta itemprop="url" content="https://akorotkov.github.io" />
 
 
 
-  
-  <h2 class="year">2016</h2>
 
-<article class="page-header" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-  
-<h2 class="post-title" itemprop="name headline"><a href="/blog/2016/06/15/pg_pathman-runtime-append/" itemprop="url">RuntimeAppend in Pg_pathman: Achievements and New Challenges</a></h2>
-<p class="meta text-muted">
-  
 
 
 
@@ -127,147 +113,117 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2021-05-17T23:30:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon 17 May 2021, 11:30 PM</time>
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Rainbow Your Psql Output
+        
+    </h1>
+    
+  </header>
 
 
+<div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border 2x" src="/images/rainbow-psql.png" width="850" height="655" />
+It seems a good idea to change grey psql output to a lovely rainbow in honor
+of <a href="https://en.wikipedia.org/wiki/International_Day_Against_Homophobia,_Transphobia_and_Biphobia">IDAHO</a> day.
+Thankfully there is <a href="https://github.com/busyloop/lolcat">lolcat</a> utility,
+which is very easy to install on Linux and Mac OS.</p>
 
+<p>Linux</p>
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>sudo snap install lolcat
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+<p>Mac OS</p>
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>brew install lolcat
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
+<p>Having lolcat installed, you can set it up as a psql pager and get lovely rainbow
+psql output!</p>
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-06-15T15:00:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Wed 15 Jun 2016,  3:00 PM</time>
-  
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp;
-<span class="categories">
-  
-    <a class='category' href='/blog/categories/append/'>append</a>, <a class='category' href='/blog/categories/partitioning/'>partitioning</a>, <a class='category' href='/blog/categories/pg/'>pg</a>, <a class='category' href='/blog/categories/pg-pathman/'>pg_pathman</a>, <a class='category' href='/blog/categories/runtime/'>runtime</a>
-  
-</span>
-
-
-</p>
-
-</article>
-
-
-
-<article class="page-header" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-  
-<h2 class="post-title" itemprop="name headline"><a href="/blog/2016/03/18/pg_pathman-update-delete-benchmark/" itemprop="url">Pg_pathman UPDATE and DELETE Support and Benchmark</a></h2>
-<p class="meta text-muted">
-  
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-18T12:20:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri 18 Mar 2016, 12:20 PM</time>
-  
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp;
-<span class="categories">
-  
-    <a class='category' href='/blog/categories/benchmark/'>benchmark</a>, <a class='category' href='/blog/categories/delete/'>delete</a>, <a class='category' href='/blog/categories/partitioning/'>partitioning</a>, <a class='category' href='/blog/categories/pg/'>pg</a>, <a class='category' href='/blog/categories/pg-pathman/'>pg_pathman</a>, <a class='category' href='/blog/categories/update/'>update</a>
-  
-</span>
-
-
-</p>
-
-</article>
-
-
-
-<article class="page-header" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-  
-<h2 class="post-title" itemprop="name headline"><a href="/blog/2016/03/14/pg_pathman-condition-processing/" itemprop="url">How Does Pg_pathman Handle Filter Conditions?</a></h2>
-<p class="meta text-muted">
-  
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-14T11:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon 14 Mar 2016, 11:10 AM</time>
-  
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp;
-<span class="categories">
-  
-    <a class='category' href='/blog/categories/condition/'>condition</a>, <a class='category' href='/blog/categories/filter/'>filter</a>, <a class='category' href='/blog/categories/partitioning/'>partitioning</a>, <a class='category' href='/blog/categories/pg/'>pg</a>, <a class='category' href='/blog/categories/pg-pathman/'>pg_pathman</a>
-  
-</span>
-
-
-</p>
-
-</article>
-
-
-
-<article class="page-header" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-  
-<h2 class="post-title" itemprop="name headline"><a href="/blog/2016/03/04/pg_pathman-beta-release/" itemprop="url">Pg_pathman Beta Release</a></h2>
-<p class="meta text-muted">
-  
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-04T17:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Fri  4 Mar 2016,  5:10 PM</time>
-  
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp;
-<span class="categories">
-  
-    <a class='category' href='/blog/categories/partitioning/'>partitioning</a>, <a class='category' href='/blog/categories/pg/'>pg</a>, <a class='category' href='/blog/categories/pg-pathman/'>pg_pathman</a>
-  
-</span>
-
-
-</p>
-
-</article>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="err">\</span><span class="n">pset</span> <span class="n">pager</span> <span class="n">always</span>
+</span><span class="line"><span class="err">\</span><span class="n">setenv</span> <span class="n">PAGER</span> <span class="s1">&#39;lolcat -f | less -iMSx4R -FX&#39;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 </div>
 
-      </div>
-      
+
+      <footer>
+        <p class="meta text-muted">
+          
+  
+
+<span class="glyphicon glyphicon-user"></span> <span class="byline author vcard" itemprop="author" itemscope itemtype="http://schema.org/Person">Posted by <span class="fn" itemprop="name">Alexander Korotkov</span></span>
+
+          
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2021-05-17T23:30:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon 17 May 2021, 11:30 PM</time>
+          
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp;
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/idaho/'>idaho</a>, <a class='category' href='/blog/categories/pg/'>pg</a>, <a class='category' href='/blog/categories/psql/'>psql</a>
+  
+</span>
+
+
+        </p>
+        
+          <div class="sharing">
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/2021/05/06/jsonpath-double-asterisk-lax/" title="Previous Post: jsonpath: ** operator and lax mode are't meant to be together.">&laquo; jsonpath: ** operator and lax mode are't meant to be together.</a></li>
+            
+            
+          </ul>
+        
+      </footer>
     </article>
+    
+      <section>
+        <h2>Comments</h2>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
     
   </div>
 
   
-    <aside class="sidebar col-md-3">
-      
-        <section class="panel panel-default">
+  <aside class="sidebar col-md-3">
+    
+      <section class="panel panel-default">
   <div class="panel-heading">
     <h3 class="panel-title">Recent Posts</h3>
   </div>
   
   <div id="recent_posts" class="list-group">
     
-    <a class="list-group-item " href="/blog/2021/05/17/rainbow-psql-output/">Rainbow Your Psql Output</a>
+    <a class="list-group-item active" href="/blog/2021/05/17/rainbow-psql-output/">Rainbow Your Psql Output</a>
     
     <a class="list-group-item " href="/blog/2021/05/06/jsonpath-double-asterisk-lax/">Jsonpath: ** Operator and Lax Mode Are't Meant to Be Together.</a>
     
@@ -285,8 +241,8 @@
 
 
 
-      
-    </aside>
+    
+  </aside>
   
 </div>
 
@@ -310,7 +266,10 @@
       var disqus_shortname = 'akorotkov';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'https://akorotkov.github.io/blog/2021/05/17/rainbow-psql-output/';
+        var disqus_url = 'https://akorotkov.github.io/blog/2021/05/17/rainbow-psql-output/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

@@ -117,6 +117,65 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2021-05-17T23:30:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon 17 May 2021, 11:30 PM</time>
+        
+      </p>
+    
+    
+      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2021/05/17/rainbow-psql-output/" itemprop="url">Rainbow Your Psql Output</a></h2>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border 2x" src="/images/rainbow-psql.png" width="850" height="655" />
+It seems a good idea to change grey psql output to a lovely rainbow in honor
+of <a href="https://en.wikipedia.org/wiki/International_Day_Against_Homophobia,_Transphobia_and_Biphobia">IDAHO</a> day.
+Thankfully there is <a href="https://github.com/busyloop/lolcat">lolcat</a> utility,
+which is very easy to install on Linux and Mac OS.</p>
+
+<p>Linux</p>
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>sudo snap install lolcat
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+<p>Mac OS</p>
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>brew install lolcat
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Having lolcat installed, you can set it up as a psql pager and get lovely rainbow
+psql output!</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="err">\</span><span class="n">pset</span> <span class="n">pager</span> <span class="n">always</span>
+</span><span class="line"><span class="err">\</span><span class="n">setenv</span> <span class="n">PAGER</span> <span class="s1">&#39;lolcat -f | less -iMSx4R -FX&#39;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2021-05-06T18:10:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Thu  6 May 2021,  6:10 PM</time>
         
       </p>
@@ -627,59 +686,6 @@ cleaning and testing #1 was finally
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-uppercase">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-04-06T15:26:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Wed  6 Apr 2016,  3:26 PM</time>
-        
-      </p>
-    
-    
-      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2016/04/06/extensible-access-methods/" itemprop="url">Extensible Access Methods Are Committed to 9.6</a></h2>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>PostgreSQL 9.6 receives suitable support of extensible index access methods.
-And that’s good news because Postgres was initially designed to support it.</p>
-
-<blockquote>
-  <p>“It is imperative that a user be able to construct new access methods to 
-provide efficient access to instances of nontraditional base types”</p>
-
-  <p>Michael Stonebraker, Jeff Anton, Michael Hirohama.
-Extendability in POSTGRES , IEEE Data Eng. Bull. 10 (2) pp.16-23, 1987</p>
-</blockquote>
-
-<p>That was a huge work which consists of multiple steps.</p>
-
-</div>
-  
-  
-    <footer>
-      <a class="read-more btn btn-default" href="/blog/2016/04/06/extensible-access-methods/">Read on &rarr;</a>
-    </footer>
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -703,6 +709,8 @@ Extendability in POSTGRES , IEEE Data Eng. Bull. 10 (2) pp.16-23, 1987</p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/2021/05/17/rainbow-psql-output/">Rainbow Your Psql Output</a>
+    
     <a class="list-group-item " href="/blog/2021/05/06/jsonpath-double-asterisk-lax/">Jsonpath: ** Operator and Lax Mode Are't Meant to Be Together.</a>
     
     <a class="list-group-item " href="/blog/2021/04/30/arm/">Dramatical Effect of LSE Instructions for PostgreSQL on Graviton2 Instances</a>
@@ -710,8 +718,6 @@ Extendability in POSTGRES , IEEE Data Eng. Bull. 10 (2) pp.16-23, 1987</p>
     <a class="list-group-item " href="/blog/2018/02/17/fulltext-search-made-almost-right/">Full Text Search Done (Almost) Right in PostgreSQL 11</a>
     
     <a class="list-group-item " href="/blog/2017/05/31/alter-index-weird/">ALTER INDEX ... SET STATISTICS ...???</a>
-    
-    <a class="list-group-item " href="/blog/2017/04/08/uber-answer/">"Our Answer to Uber" Talk at United Dev Conf, Minsk</a>
     
   </div>
 </section>

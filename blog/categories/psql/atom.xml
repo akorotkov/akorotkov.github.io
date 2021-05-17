@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Psql | Alexander Korotkov's blog]]></title>
   <link href="https://akorotkov.github.io/blog/categories/psql/atom.xml" rel="self"/>
   <link href="https://akorotkov.github.io/"/>
-  <updated>2021-05-06T18:20:24+03:00</updated>
+  <updated>2021-05-17T23:31:00+03:00</updated>
   <id>https://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -12,6 +12,37 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Rainbow Your Psql Output]]></title>
+    <link href="https://akorotkov.github.io/blog/2021/05/17/rainbow-psql-output/"/>
+    <updated>2021-05-17T23:30:00+03:00</updated>
+    <id>https://akorotkov.github.io/blog/2021/05/17/rainbow-psql-output</id>
+    <content type="html"><![CDATA[<p><img class="no-border 2x" src="/images/rainbow-psql.png" width="850" height="655">
+It seems a good idea to change grey psql output to a lovely rainbow in honor
+of <a href="https://en.wikipedia.org/wiki/International_Day_Against_Homophobia,_Transphobia_and_Biphobia">IDAHO</a> day.
+Thankfully there is <a href="https://github.com/busyloop/lolcat">lolcat</a> utility,
+which is very easy to install on Linux and Mac OS.</p>
+
+<p>Linux
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>sudo snap install lolcat
+</span></code></pre></td></tr></table></div></figure>
+Mac OS
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>brew install lolcat
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>Having lolcat installed, you can set it up as a psql pager and get lovely rainbow
+psql output!</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="err">\</span><span class="n">pset</span> <span class="n">pager</span> <span class="n">always</span>
+</span><span class='line'><span class="err">\</span><span class="n">setenv</span> <span class="n">PAGER</span> <span class="err">‘</span><span class="n">lolcat</span> <span class="o">-</span><span class="n">f</span> <span class="o">|</span> <span class="k">less</span> <span class="o">-</span><span class="n">iMSx4R</span> <span class="o">-</span><span class="n">FX</span><span class="err">’</span>
+</span></code></pre></td></tr></table></div></figure></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Drawing Graphs Directly in Psql]]></title>
