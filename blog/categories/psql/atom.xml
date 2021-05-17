@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Psql | Alexander Korotkov's blog]]></title>
   <link href="https://akorotkov.github.io/blog/categories/psql/atom.xml" rel="self"/>
   <link href="https://akorotkov.github.io/"/>
-  <updated>2021-05-17T23:31:58+03:00</updated>
+  <updated>2021-05-17T23:39:55+03:00</updated>
   <id>https://akorotkov.github.io/</id>
   <author>
     <name><![CDATA[Alexander Korotkov]]></name>
@@ -20,7 +20,7 @@
     <id>https://akorotkov.github.io/blog/2021/05/17/rainbow-psql-output</id>
     <content type="html"><![CDATA[<p><img class="no-border 2x" src="/images/rainbow-psql.png" width="850" height="655">
 It seems a good idea to change grey psql output to a lovely rainbow in honor
-of <a href="https://en.wikipedia.org/wiki/International_Day_Against_Homophobia,_Transphobia_and_Biphobia">IDAHO</a> day.
+of <a href="https://en.wikipedia.org/wiki/International_Day_Against_Homophobia,_Transphobia_and_Biphobia">IDAHOT</a> day.
 Thankfully there is <a href="https://github.com/busyloop/lolcat">lolcat</a> utility,
 which is very easy to install on Linux and Mac OS.</p>
 
