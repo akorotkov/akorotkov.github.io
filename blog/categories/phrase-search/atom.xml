@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Phrase Search | Alexander Korotkov's blog]]></title>
+  <link href="https://akorotkov.github.io/blog/categories/phrase-search/atom.xml" rel="self"/>
+  <link href="https://akorotkov.github.io/"/>
+  <updated>2021-05-22T14:13:22+03:00</updated>
+  <id>https://akorotkov.github.io/</id>
+  <author>
+    <name><![CDATA[Alexander Korotkov]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[PostgreSQL 14: Substantion Change to Fulltext Query Parsing]]></title>
+    <link href="https://akorotkov.github.io/blog/2021/05/22/pg-14-query-parsing/"/>
+    <updated>2021-05-22T14:12:00+03:00</updated>
+    <id>https://akorotkov.github.io/blog/2021/05/22/pg-14-query-parsing</id>
+    <content type="html"><![CDATA[<p><img class="no-border 2x" src="/images/fts.png" width="490" height="235"></p>
+
+<p>Long story short, since PostgreSQL 14 <code>to_tsquery('pg_class')</code> becomes
+<code>'pg' &lt;-&gt; 'class'</code> instead of <code>'pg' &amp; 'class'</code>
+(<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=0c4f355c6a">commit 0c4f355c6a</a>).  That is for instance,
+in PostgreSQL 13 and earlier <code>to_tsquery('pg_class')</code> matches
+<code>to_tsvector('a class of pg')</code>.  But since PostgreSQL 14 it doesn’t match, but
+still matches <code>to_tsvector('pg_class')</code> and <code>to_tsvector('pg*class')</code>.
+This is incompatible change, which affects fts users, but we have to do this
+in order to fix phrase search design problems.</p>
+
+<p>The story started with a
+<a href="https://www.postgresql.org/message-id/16592-70b110ff9731c07d@postgresql.org">bug</a>
+when <code>to_tsvector('pg_class pg')</code> didn’t match to
+<code>websearch_to_tsquery('"pg_class pg"')</code>.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="o">#</span> <span class="k">select</span> <span class="n">to_tsvector</span><span class="p">(</span><span class="err">‘</span><span class="n">pg_class</span> <span class="n">pg</span><span class="err">’</span><span class="p">)</span> <span class="o">@@</span>
+</span><span class='line'>         <span class="n">websearch_to_tsquery</span><span class="p">(</span><span class="err">‘“</span><span class="n">pg_class</span> <span class="n">pg</span><span class="err">”’</span><span class="p">);</span>
+</span><span class='line'> <span class="o">?</span><span class="k">column</span><span class="o">?</span>
+</span><span class='line'><span class="err">———</span><span class="o">-</span>
+</span><span class='line'> <span class="n">f</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>Looks strange!  Naturally, when you search for some
+text in quotes, you expect it to match at least the exact same text in the document.
+But it doesn’t. My first idea was that it’s just bug of <code>websearch_to_tsquery()</code>
+function, but <code>to_tsquery()</code> appears to have the same problem:
+<code>to_tsquery('pg_class &lt;-&gt; pg')</code> doesn’t match to <code>to_tsvector('pg_class pg')</code>
+as well.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="o">#</span> <span class="k">select</span> <span class="n">to_tsvector</span><span class="p">(</span><span class="err">‘</span><span class="n">pg_class</span> <span class="n">pg</span><span class="err">’</span><span class="p">)</span> <span class="o">@@</span>
+</span><span class='line'>         <span class="n">to_tsquery</span><span class="p">(</span><span class="err">‘</span><span class="n">pg_class</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">pg</span><span class="err">’</span><span class="p">);</span>
+</span><span class='line'> <span class="o">?</span><span class="k">column</span><span class="o">?</span>
+</span><span class='line'><span class="err">———</span><span class="o">-</span>
+</span><span class='line'> <span class="n">f</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>I was surprised that although phrase search arrived many years ago,
+basic things don’t work.</p>
+
+<!--more-->
+
+<p>Looking under the hood, both <code>websearch_to_tsquery('"pg_class pg"')</code> and
+<code>to_tsquery('pg_class &lt;-&gt; pg')</code> compiles into <code>( 'pg' &amp; 'class' ) &lt;-&gt; 'pg'</code>.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="o">#</span> <span class="k">select</span> <span class="n">websearch_to_tsquery</span><span class="p">(</span><span class="err">‘“</span><span class="n">pg_class</span> <span class="n">pg</span><span class="err">”’</span><span class="p">),</span>
+</span><span class='line'>         <span class="n">to_tsquery</span><span class="p">(</span><span class="err">‘</span><span class="n">pg_class</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">pg</span><span class="err">’</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">websearch_to_tsquery</span>     <span class="o">|</span>         <span class="n">to_tsquery</span>
+</span><span class='line'><span class="err">—————————–</span><span class="o">+</span><span class="err">—————————–</span>
+</span><span class='line'> <span class="p">(</span> <span class="err">‘</span><span class="n">pg</span><span class="err">’</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="err">‘</span><span class="k">class</span><span class="err">’</span> <span class="p">)</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="err">‘</span><span class="n">pg</span><span class="err">’</span> <span class="o">|</span> <span class="p">(</span> <span class="err">‘</span><span class="n">pg</span><span class="err">’</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="err">‘</span><span class="k">class</span><span class="err">’</span> <span class="p">)</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="err">‘</span><span class="n">pg</span><span class="err">’</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>This tsquery expects both <code>pg</code> and <code>class</code> to be one position left from another
+<code>pg</code>.  That means both <code>pg</code> and <code>class</code> need to reside in the same position.
+In principle, that’s possible, for instance, when a single word is split into two
+synonyms by fulltext dictionary.  But that’s not out case.  When we parse
+<code>pg_class pg</code> text, each word gets position sequentially.  No two of them
+reside in the same position.</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="o">#</span> <span class="k">select</span> <span class="n">to_tsvector</span><span class="p">(</span><span class="err">‘</span><span class="n">pg_class</span> <span class="n">pg</span><span class="err">’</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">to_tsvector</span>
+</span><span class='line'><span class="err">——————–</span>
+</span><span class='line'> <span class="err">‘</span><span class="k">class</span><span class="err">’</span><span class="p">:</span><span class="mi">2</span> <span class="err">‘</span><span class="n">pg</span><span class="err">’</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span>
+</span><span class='line'><span class="p">(</span><span class="mi">1</span> <span class="k">row</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>Why does tsquery parsing work this way?  Historically, in PostgreSQL fulltext search
+<code>to_tsquery('pg_class')</code> compiles into <code>'pg' &amp; 'class'</code>.  Therefore, <code>pg</code> and
+<code>class</code> don’t have to appear together.  Before phrase search, that was the
+only way to process this query as soon as we split <code>pg_class</code> into <code>pg</code> and
+<code>class</code>.  Thus, querying compound words was a bit relaxed.  But now, when
+combined with phrase search, it becomes unreasonably strict.</p>
+
+<p>My original intention was to choose the way to compile <code>pg_class</code> depending
+on the context.  With phrase search operator nearby <code>pg_class</code> should become
+<code>'pg' &lt;-&gt; 'class'</code>, but be <code>'pg' &amp; 'class'</code> in the rest of cases.  But this
+way required invasive refactoring of tsquery processing, taking more time than
+I could to spend on this bug.</p>
+
+<p>Fortunately, <a href="https://www.postgresql.org/message-id/10026.1609953512%40sss.pgh.pa.us">Tom Lane came with a proposal</a>
+to always compile <code>pg_class</code> into <code>'pg' &lt;-&gt; 'class'</code>.  Thus, now both
+<code>websearch_to_tsquery('"pg_class pg"')</code> and <code>to_tsquery('pg_class &lt;-&gt; pg')</code>
+compile into <code>'pg' &lt;-&gt; 'class' &lt;-&gt; 'pg'</code>.  And both of them match to
+<code>to_tsvector('pg_class pg')</code>.  That is a win!</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="o">#</span> <span class="k">select</span> <span class="n">websearch_to_tsquery</span><span class="p">(</span><span class="err">‘“</span><span class="n">pg_class</span> <span class="n">pg</span><span class="err">”’</span><span class="p">),</span>
+</span><span class='line'>         <span class="n">to_tsquery</span><span class="p">(</span><span class="err">‘</span><span class="n">pg_class</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">pg</span><span class="err">’</span><span class="p">);</span>
+</span><span class='line'>   <span class="n">websearch_to_tsquery</span>    <span class="err">│</span>        <span class="n">to_tsquery</span>
+</span><span class='line'><span class="err">───────────────────────────┼───────────────────────────</span>
+</span><span class='line'> <span class="err">‘</span><span class="n">pg</span><span class="err">’</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="err">‘</span><span class="k">class</span><span class="err">’</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="err">‘</span><span class="n">pg</span><span class="err">’</span> <span class="err">│</span> <span class="err">‘</span><span class="n">pg</span><span class="err">’</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="err">‘</span><span class="k">class</span><span class="err">’</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="err">‘</span><span class="n">pg</span><span class="err">’</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="ss">&quot;select-totsvectorpgclass-pg--websearchtotsquerypgclass-pg&quot;</span><span class="o">&gt;</span><span class="k">select</span> <span class="n">to_tsvector</span><span class="p">(</span><span class="err">‘</span><span class="n">pg_class</span> <span class="n">pg</span><span class="err">’</span><span class="p">)</span> <span class="o">@@</span> <span class="n">websearch_to_tsquery</span><span class="p">(</span><span class="err">‘“</span><span class="n">pg_class</span> <span class="n">pg</span><span class="err">”’</span><span class="p">),</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>     <span class="n">to_tsvector</span><span class="p">(</span><span class="s1">&#39;pg_class pg&#39;</span><span class="p">)</span> <span class="o">@@</span> <span class="n">to_tsquery</span><span class="p">(</span><span class="s1">&#39;pg_class &amp;lt;-&amp;gt; pg&#39;</span><span class="p">);</span>  <span class="o">?</span><span class="k">column</span><span class="o">?</span> <span class="err">│</span> <span class="o">?</span><span class="k">column</span><span class="o">?</span> <span class="err">──────────┼──────────</span>  <span class="n">t</span>        <span class="err">│</span> <span class="n">t</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>This approach would make
+all queries involving compound words more strict. But at first, this appears
+the only easy way to fix this design bug. Secondly, this is probably a better
+way to handle compound words themselves.</p>
+
+<p>And AFAICS, this approach seems to be the right way.  Thanks to it, yet another
+<a href="https://www.postgresql.org/message-id/CA%2B0DEqiZs7gdOd4ikmg%3D0UWG%2BSwWOLxPsk_JW-sx9WNOyrb0KQ%40mail.gmail.com">phrase search bug</a>
+appears to be quite <a href="https://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=eb086056fec44516efdd5db71244a079fed65c7f">easy to fix</a>.</p>
+
+<p>Happy phrase searching in PostgreSQL 14!  Hopefully, we would further manage
+without incompatible changes :)</p>
+]]></content>
+  </entry>
+  
+</feed>

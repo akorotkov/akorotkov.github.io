@@ -118,6 +118,96 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2021-05-22T14:12:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Sat 22 May 2021,  2:12 PM</time>
+        
+      </p>
+    
+    
+      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2021/05/22/pg-14-query-parsing/" itemprop="url">PostgreSQL 14: Substantion Change to Fulltext Query Parsing</a></h2>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border 2x" src="/images/fts.png" width="490" height="235" /></p>
+
+<p>Long story short, since PostgreSQL 14 <code>to_tsquery('pg_class')</code> becomes
+<code>'pg' &lt;-&gt; 'class'</code> instead of <code>'pg' &amp; 'class'</code>
+(<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=0c4f355c6a">commit 0c4f355c6a</a>).  That is for instance,
+in PostgreSQL 13 and earlier <code>to_tsquery('pg_class')</code> matches
+<code>to_tsvector('a class of pg')</code>.  But since PostgreSQL 14 it doesn’t match, but
+still matches <code>to_tsvector('pg_class')</code> and <code>to_tsvector('pg*class')</code>.
+This is incompatible change, which affects fts users, but we have to do this
+in order to fix phrase search design problems.</p>
+
+<p>The story started with a
+<a href="https://www.postgresql.org/message-id/16592-70b110ff9731c07d@postgresql.org">bug</a>
+when <code>to_tsvector('pg_class pg')</code> didn’t match to
+<code>websearch_to_tsquery('"pg_class pg"')</code>.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">select</span> <span class="n">to_tsvector</span><span class="p">(</span><span class="s1">&#39;pg_class pg&#39;</span><span class="p">)</span> <span class="o">@@</span>
+</span><span class="line">         <span class="n">websearch_to_tsquery</span><span class="p">(</span><span class="s1">&#39;&quot;pg_class pg&quot;&#39;</span><span class="p">);</span>
+</span><span class="line"> <span class="o">?</span><span class="k">column</span><span class="o">?</span>
+</span><span class="line"><span class="c1">----------</span>
+</span><span class="line"> <span class="n">f</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Looks strange!  Naturally, when you search for some
+text in quotes, you expect it to match at least the exact same text in the document.
+But it doesn’t. My first idea was that it’s just bug of <code>websearch_to_tsquery()</code>
+function, but <code>to_tsquery()</code> appears to have the same problem:
+<code>to_tsquery('pg_class &lt;-&gt; pg')</code> doesn’t match to <code>to_tsvector('pg_class pg')</code>
+as well.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">select</span> <span class="n">to_tsvector</span><span class="p">(</span><span class="s1">&#39;pg_class pg&#39;</span><span class="p">)</span> <span class="o">@@</span>
+</span><span class="line">         <span class="n">to_tsquery</span><span class="p">(</span><span class="s1">&#39;pg_class &lt;-&gt; pg&#39;</span><span class="p">);</span>
+</span><span class="line"> <span class="o">?</span><span class="k">column</span><span class="o">?</span>
+</span><span class="line"><span class="c1">----------</span>
+</span><span class="line"> <span class="n">f</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>I was surprised that although phrase search arrived many years ago,
+basic things don’t work.</p>
+
+</div>
+  
+  
+    <footer>
+      <a class="read-more btn btn-default" href="/blog/2021/05/22/pg-14-query-parsing/">Read on &rarr;</a>
+    </footer>
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2021-05-17T23:30:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon 17 May 2021, 11:30 PM</time>
         
       </p>
@@ -615,78 +705,6 @@ example on the screenshot below.</p>
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-uppercase">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-05-09T12:50:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Mon  9 May 2016, 12:50 PM</time>
-        
-      </p>
-    
-    
-      <h2 class="entry-title" itemprop="name headline"><a href="/blog/2016/05/09/scalability-towards-millions-tps/" itemprop="url">PostgreSQL Scalability: Towards Millions TPS</a></h2>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>PostgreSQL scalability on multicore and multisocket machines became a subject
-of optimization long time ago once such machines became widely used.
-<a href="http://suckit.blog.hu/2009/09/29/postgresql_history">This blog post</a> shows
-brief history of vertical scalability improvements between versions 8.0 and 8.4.
-PostgreSQL 9.2 had very noticeable scalability improvement.  Thanks to fast
-path locking and other optimizations it becomes possible to achieve
-<a href="http://rhaas.blogspot.ru/2012/04/did-i-say-32-cores-how-about-64.html">more than 350 000 TPS in select-only pgbench test</a>.  The latest stable release PostgreSQL 9.5 also
-contain significant scalability advancements including LWLock improvement which
-allows achieving <a href="http://amitkapila16.blogspot.ru/2015/01/read-scalability-in-postgresql-95.html">about 400 000 TPS in select-only pgbench test</a>.</p>
-
-<p>Postgres Professional company also became involved into scalability
-optimization.  In partnership with IBM we researched PostgreSQL scalability on
-modern Power8 servers.  The results of this research was published in
-<a href="https://habrahabr.ru/company/postgrespro/blog/270827/">popular Russian blog habrahabr</a>
-(<a href="https://translate.google.com/translate?sl=ru&amp;tl=en&amp;js=y&amp;prev=_t&amp;hl=ru&amp;ie=UTF-8&amp;u=https%3A%2F%2Fhabrahabr.ru%2Fcompany%2Fpostgrespro%2Fblog%2F270827%2F&amp;edit-text=&amp;act=url">Google translated version</a>).
-As brief result of this research we identify two ways to improve PostgreSQL
-scalability on Power8:</p>
-
-<ol>
-  <li>Implement Pin/UnpinBuffer() using CAS operations instead of
-buffer header spinlock;</li>
-  <li>Optimize LWLockAttemptLock() in assembly to make fewer loops for changing
-lwlock state.</li>
-</ol>
-
-<p>The optimization #1 appears to give huge benefit on big Intel servers as well,
-while optimization #2 is Power-specific.  After long rounds of optimization,
-cleaning and testing #1 was finally
-<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=48354581">committed by Andres Freund</a>.</p>
-
-<p><img class="no-border center 2x" src="/images/scalability.png" width="720" height="576" /></p>
-
-</div>
-  
-  
-    <footer>
-      <a class="read-more btn btn-default" href="/blog/2016/05/09/scalability-towards-millions-tps/">Read on &rarr;</a>
-    </footer>
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -710,6 +728,8 @@ cleaning and testing #1 was finally
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/2021/05/22/pg-14-query-parsing/">PostgreSQL 14: Substantion Change to Fulltext Query Parsing</a>
+    
     <a class="list-group-item " href="/blog/2021/05/17/rainbow-psql-output/">Rainbow Your Psql Output</a>
     
     <a class="list-group-item " href="/blog/2021/05/06/jsonpath-double-asterisk-lax/">Jsonpath: ** Operator and Lax Mode Are't Meant to Be Together.</a>
@@ -717,8 +737,6 @@ cleaning and testing #1 was finally
     <a class="list-group-item " href="/blog/2021/04/30/arm/">Dramatical Effect of LSE Instructions for PostgreSQL on Graviton2 Instances</a>
     
     <a class="list-group-item " href="/blog/2018/02/17/fulltext-search-made-almost-right/">Full Text Search Done (Almost) Right in PostgreSQL 11</a>
-    
-    <a class="list-group-item " href="/blog/2017/05/31/alter-index-weird/">ALTER INDEX ... SET STATISTICS ...???</a>
     
   </div>
 </section>

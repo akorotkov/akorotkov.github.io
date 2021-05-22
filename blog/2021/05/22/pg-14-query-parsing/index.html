@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>PostgreSQL 14: Substantion Change to Fulltext Query Parsing - Alexander Korotkov's blog</title>
+  <meta name="author" content="Alexander Korotkov">
+
+  <meta name="description" content="Long story short, since PostgreSQL 14 to_tsquery('pg_class') becomes
+'pg class' instead of 'pg & class'.
+">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="https://akorotkov.github.io/blog/2021/05/22/pg-14-query-parsing/">
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link href="/atom.xml" rel="alternate" title="Alexander Korotkov's blog" type="application/atom+xml">
+
+  <!-- http://opengraphprotocol.org/ -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://akorotkov.github.io/blog/2021/05/22/pg-14-query-parsing/">
+  <meta property="og:title" content="PostgreSQL 14: Substantion Change to Fulltext Query Parsing - Alexander Korotkov's blog">
+  <meta property="og:description" content="Long story short, since PostgreSQL 14 to_tsquery('pg_class') becomes
+'pg class' instead of 'pg & class'.
+">
+
+  <meta property="og:image" content="https://akorotkov.github.io/images/fts.png">
+
+
+  <script src="/javascripts/libs/jquery/jquery-2.1.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection, print" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+  <body   >
+    <a href="#content" class="sr-only sr-only-focusable">Skip to main content</a>
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" title="toggle navbar" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Alexander Korotkov's blog</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li>
+                    <a href="/about">About me</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="/atom.xml" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="navbar-form navbar-right" action="https://www.google.com/search" method="GET">
+                    <input type="hidden" name="sitesearch" value="akorotkov.github.io">
+                    <div class="form-group">
+                        <input class="form-control" type="text" name="q" placeholder="Search">
+                    </div>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" role="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Alexander Korotkov's blog" />
+    
+    <meta itemprop="url" content="https://akorotkov.github.io" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2021-05-22T14:12:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Sat 22 May 2021,  2:12 PM</time>
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        PostgreSQL 14: Substantion Change to Fulltext Query Parsing
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody description"><p><img class="no-border 2x" src="/images/fts.png" width="490" height="235" /></p>
+
+<p>Long story short, since PostgreSQL 14 <code>to_tsquery('pg_class')</code> becomes
+<code>'pg' &lt;-&gt; 'class'</code> instead of <code>'pg' &amp; 'class'</code>
+(<a href="http://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=0c4f355c6a">commit 0c4f355c6a</a>).  That is for instance,
+in PostgreSQL 13 and earlier <code>to_tsquery('pg_class')</code> matches
+<code>to_tsvector('a class of pg')</code>.  But since PostgreSQL 14 it doesn’t match, but
+still matches <code>to_tsvector('pg_class')</code> and <code>to_tsvector('pg*class')</code>.
+This is incompatible change, which affects fts users, but we have to do this
+in order to fix phrase search design problems.</p>
+
+<p>The story started with a
+<a href="https://www.postgresql.org/message-id/16592-70b110ff9731c07d@postgresql.org">bug</a>
+when <code>to_tsvector('pg_class pg')</code> didn’t match to
+<code>websearch_to_tsquery('"pg_class pg"')</code>.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">select</span> <span class="n">to_tsvector</span><span class="p">(</span><span class="s1">&#39;pg_class pg&#39;</span><span class="p">)</span> <span class="o">@@</span>
+</span><span class="line">         <span class="n">websearch_to_tsquery</span><span class="p">(</span><span class="s1">&#39;&quot;pg_class pg&quot;&#39;</span><span class="p">);</span>
+</span><span class="line"> <span class="o">?</span><span class="k">column</span><span class="o">?</span>
+</span><span class="line"><span class="c1">----------</span>
+</span><span class="line"> <span class="n">f</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Looks strange!  Naturally, when you search for some
+text in quotes, you expect it to match at least the exact same text in the document.
+But it doesn’t. My first idea was that it’s just bug of <code>websearch_to_tsquery()</code>
+function, but <code>to_tsquery()</code> appears to have the same problem:
+<code>to_tsquery('pg_class &lt;-&gt; pg')</code> doesn’t match to <code>to_tsvector('pg_class pg')</code>
+as well.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">select</span> <span class="n">to_tsvector</span><span class="p">(</span><span class="s1">&#39;pg_class pg&#39;</span><span class="p">)</span> <span class="o">@@</span>
+</span><span class="line">         <span class="n">to_tsquery</span><span class="p">(</span><span class="s1">&#39;pg_class &lt;-&gt; pg&#39;</span><span class="p">);</span>
+</span><span class="line"> <span class="o">?</span><span class="k">column</span><span class="o">?</span>
+</span><span class="line"><span class="c1">----------</span>
+</span><span class="line"> <span class="n">f</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>I was surprised that although phrase search arrived many years ago,
+basic things don’t work.</p>
+
+<!--more-->
+
+<p>Looking under the hood, both <code>websearch_to_tsquery('"pg_class pg"')</code> and
+<code>to_tsquery('pg_class &lt;-&gt; pg')</code> compiles into <code>( 'pg' &amp; 'class' ) &lt;-&gt; 'pg'</code>.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">select</span> <span class="n">websearch_to_tsquery</span><span class="p">(</span><span class="s1">&#39;&quot;pg_class pg&quot;&#39;</span><span class="p">),</span>
+</span><span class="line">         <span class="n">to_tsquery</span><span class="p">(</span><span class="s1">&#39;pg_class &lt;-&gt; pg&#39;</span><span class="p">);</span>
+</span><span class="line">    <span class="n">websearch_to_tsquery</span>     <span class="o">|</span>         <span class="n">to_tsquery</span>
+</span><span class="line"><span class="c1">-----------------------------+-----------------------------</span>
+</span><span class="line"> <span class="p">(</span> <span class="s1">&#39;pg&#39;</span> <span class="o">&amp;</span> <span class="s1">&#39;class&#39;</span> <span class="p">)</span> <span class="o">&lt;-&gt;</span> <span class="s1">&#39;pg&#39;</span> <span class="o">|</span> <span class="p">(</span> <span class="s1">&#39;pg&#39;</span> <span class="o">&amp;</span> <span class="s1">&#39;class&#39;</span> <span class="p">)</span> <span class="o">&lt;-&gt;</span> <span class="s1">&#39;pg&#39;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>This tsquery expects both <code>pg</code> and <code>class</code> to be one position left from another
+<code>pg</code>.  That means both <code>pg</code> and <code>class</code> need to reside in the same position.
+In principle, that’s possible, for instance, when a single word is split into two
+synonyms by fulltext dictionary.  But that’s not out case.  When we parse
+<code>pg_class pg</code> text, each word gets position sequentially.  No two of them
+reside in the same position.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">select</span> <span class="n">to_tsvector</span><span class="p">(</span><span class="s1">&#39;pg_class pg&#39;</span><span class="p">);</span>
+</span><span class="line">    <span class="n">to_tsvector</span>
+</span><span class="line"><span class="c1">--------------------</span>
+</span><span class="line"> <span class="s1">&#39;class&#39;</span><span class="p">:</span><span class="mi">2</span> <span class="s1">&#39;pg&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span>
+</span><span class="line"><span class="p">(</span><span class="mi">1</span> <span class="k">row</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Why does tsquery parsing work this way?  Historically, in PostgreSQL fulltext search
+<code>to_tsquery('pg_class')</code> compiles into <code>'pg' &amp; 'class'</code>.  Therefore, <code>pg</code> and
+<code>class</code> don’t have to appear together.  Before phrase search, that was the
+only way to process this query as soon as we split <code>pg_class</code> into <code>pg</code> and
+<code>class</code>.  Thus, querying compound words was a bit relaxed.  But now, when
+combined with phrase search, it becomes unreasonably strict.</p>
+
+<p>My original intention was to choose the way to compile <code>pg_class</code> depending
+on the context.  With phrase search operator nearby <code>pg_class</code> should become
+<code>'pg' &lt;-&gt; 'class'</code>, but be <code>'pg' &amp; 'class'</code> in the rest of cases.  But this
+way required invasive refactoring of tsquery processing, taking more time than
+I could to spend on this bug.</p>
+
+<p>Fortunately, <a href="https://www.postgresql.org/message-id/10026.1609953512%40sss.pgh.pa.us">Tom Lane came with a proposal</a>
+to always compile <code>pg_class</code> into <code>'pg' &lt;-&gt; 'class'</code>.  Thus, now both
+<code>websearch_to_tsquery('"pg_class pg"')</code> and <code>to_tsquery('pg_class &lt;-&gt; pg')</code>
+compile into <code>'pg' &lt;-&gt; 'class' &lt;-&gt; 'pg'</code>.  And both of them match to
+<code>to_tsvector('pg_class pg')</code>.  That is a win!</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class="sql"><span class="line"><span class="o">#</span> <span class="k">select</span> <span class="n">websearch_to_tsquery</span><span class="p">(</span><span class="s1">&#39;&quot;pg_class pg&quot;&#39;</span><span class="p">),</span>
+</span><span class="line">         <span class="n">to_tsquery</span><span class="p">(</span><span class="s1">&#39;pg_class &lt;-&gt; pg&#39;</span><span class="p">);</span>
+</span><span class="line">   <span class="n">websearch_to_tsquery</span>    <span class="err">│</span>        <span class="n">to_tsquery</span>
+</span><span class="line"><span class="err">───────────────────────────┼───────────────────────────</span>
+</span><span class="line"> <span class="s1">&#39;pg&#39;</span> <span class="o">&lt;-&gt;</span> <span class="s1">&#39;class&#39;</span> <span class="o">&lt;-&gt;</span> <span class="s1">&#39;pg&#39;</span> <span class="err">│</span> <span class="s1">&#39;pg&#39;</span> <span class="o">&lt;-&gt;</span> <span class="s1">&#39;class&#39;</span> <span class="o">&lt;-&gt;</span> <span class="s1">&#39;pg&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="o">#</span> <span class="k">select</span> <span class="n">to_tsvector</span><span class="p">(</span><span class="s1">&#39;pg_class pg&#39;</span><span class="p">)</span> <span class="o">@@</span> <span class="n">websearch_to_tsquery</span><span class="p">(</span><span class="s1">&#39;&quot;pg_class pg&quot;&#39;</span><span class="p">),</span>
+</span><span class="line">         <span class="n">to_tsvector</span><span class="p">(</span><span class="s1">&#39;pg_class pg&#39;</span><span class="p">)</span> <span class="o">@@</span> <span class="n">to_tsquery</span><span class="p">(</span><span class="s1">&#39;pg_class &lt;-&gt; pg&#39;</span><span class="p">);</span>
+</span><span class="line"> <span class="o">?</span><span class="k">column</span><span class="o">?</span> <span class="err">│</span> <span class="o">?</span><span class="k">column</span><span class="o">?</span>
+</span><span class="line"><span class="err">──────────┼──────────</span>
+</span><span class="line"> <span class="n">t</span>        <span class="err">│</span> <span class="n">t</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>This approach would make
+all queries involving compound words more strict. But at first, this appears
+the only easy way to fix this design bug. Secondly, this is probably a better
+way to handle compound words themselves.</p>
+
+<p>And AFAICS, this approach seems to be the right way.  Thanks to it, yet another
+<a href="https://www.postgresql.org/message-id/CA%2B0DEqiZs7gdOd4ikmg%3D0UWG%2BSwWOLxPsk_JW-sx9WNOyrb0KQ%40mail.gmail.com">phrase search bug</a>
+appears to be quite <a href="https://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=eb086056fec44516efdd5db71244a079fed65c7f">easy to fix</a>.</p>
+
+<p>Happy phrase searching in PostgreSQL 14!  Hopefully, we would further manage
+without incompatible changes :)</p>
+</div>
+
+
+      <footer>
+        <p class="meta text-muted">
+          
+  
+
+<span class="glyphicon glyphicon-user"></span> <span class="byline author vcard" itemprop="author" itemscope itemtype="http://schema.org/Person">Posted by <span class="fn" itemprop="name">Alexander Korotkov</span></span>
+
+          
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2021-05-22T14:12:00+03:00"  data-updated="true" itemprop="datePublished dateCreated">Sat 22 May 2021,  2:12 PM</time>
+          
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp;
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/fts/'>fts</a>, <a class='category' href='/blog/categories/pg/'>pg</a>, <a class='category' href='/blog/categories/phrase-search/'>phrase search</a>
+  
+</span>
+
+
+        </p>
+        
+          <div class="sharing">
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/2021/05/17/rainbow-psql-output/" title="Previous Post: Rainbow your psql output">&laquo; Rainbow your psql output</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h2>Comments</h2>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      <section class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Recent Posts</h3>
+  </div>
+  
+  <div id="recent_posts" class="list-group">
+    
+    <a class="list-group-item active" href="/blog/2021/05/22/pg-14-query-parsing/">PostgreSQL 14: Substantion Change to Fulltext Query Parsing</a>
+    
+    <a class="list-group-item " href="/blog/2021/05/17/rainbow-psql-output/">Rainbow Your Psql Output</a>
+    
+    <a class="list-group-item " href="/blog/2021/05/06/jsonpath-double-asterisk-lax/">Jsonpath: ** Operator and Lax Mode Are't Meant to Be Together.</a>
+    
+    <a class="list-group-item " href="/blog/2021/04/30/arm/">Dramatical Effect of LSE Instructions for PostgreSQL on Graviton2 Instances</a>
+    
+    <a class="list-group-item " href="/blog/2018/02/17/fulltext-search-made-almost-right/">Full Text Search Done (Almost) Right in PostgreSQL 11</a>
+    
+  </div>
+</section>
+
+
+
+
+
+
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2021 - Alexander Korotkov<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'akorotkov';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'https://akorotkov.github.io/blog/2021/05/22/pg-14-query-parsing/';
+        var disqus_url = 'https://akorotkov.github.io/blog/2021/05/22/pg-14-query-parsing/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr.js"></script>
+<script src="/javascripts/retina.js"></script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-77524230-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+  </body>
+</html>
