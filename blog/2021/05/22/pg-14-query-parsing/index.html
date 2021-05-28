@@ -203,7 +203,7 @@ basic things don’t work.</p>
 <p>This tsquery expects both <code>pg</code> and <code>class</code> to be one position left from another
 <code>pg</code>.  That means both <code>pg</code> and <code>class</code> need to reside in the same position.
 In principle, that’s possible, for instance, when a single word is split into two
-synonyms by fulltext dictionary.  But that’s not out case.  When we parse
+synonyms by fulltext dictionary.  But that’s not our case.  When we parse
 <code>pg_class pg</code> text, each word gets position sequentially.  No two of them
 reside in the same position.</p>
 
